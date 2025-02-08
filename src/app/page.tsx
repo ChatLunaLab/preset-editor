@@ -21,7 +21,7 @@ const characters = [
 export default function Page() {
   return (
     <MainLayout>
-      <div className="container py-6 px-6">
+      <div className=" py-6 px-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div className="text-2xl md:text-3xl font-bold"></div>
           <div className="flex gap-2">
