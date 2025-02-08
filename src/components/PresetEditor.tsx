@@ -1,3 +1,5 @@
+"use client"
+
 import { BaseMessage, PresetTemplate, AuthorsNote, KnowledgeConfig, RoleBook } from "@/types/preset";
 import { useState } from "react";
 import { Button } from "./ui/button";
