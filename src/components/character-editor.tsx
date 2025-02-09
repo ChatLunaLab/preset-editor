@@ -31,21 +31,19 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
 
     return (
         <div className="flex flex-col h-full px-6">
-            <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="container">
-                    <div className="flex h-16 items-center">
-                        <Tabs
-                            defaultValue="basic"
-                            className="w-full"
-                            onValueChange={setActiveTab}
-                        >
-                            <TabsList className="h-10 bg-transparent p-0">
-                                {preset.type === "main"
-                                    ? mainPresetTabs()
-                                    : characterPresetTabs()}
-                            </TabsList>
-                        </Tabs>
-                    </div>
+            <div className="border-b">
+                <div className="flex h-16 items-center w-full">
+                    <Tabs
+                        defaultValue="basic"
+                        className="w-full"
+                        onValueChange={setActiveTab}
+                    >
+                        <TabsList className="h-10  p-0">
+                            {preset.type === "main"
+                                ? mainPresetTabs()
+                                : characterPresetTabs()}
+                        </TabsList>
+                    </Tabs>
                 </div>
             </div>
             <div className="flex-1 overflow-auto">
@@ -93,7 +91,7 @@ function mainPresetTabs() {
             >
                 <TabsTrigger
                     value="basic"
-                    className="rounded-md data-[state=active]:bg-muted px-3 py-1.5 text-sm font-medium transition-all"
+                    className="px-3 py-1.5 text-sm font-medium transition-all"
                 >
                     基本配置
                 </TabsTrigger>
@@ -107,7 +105,7 @@ function mainPresetTabs() {
             >
                 <TabsTrigger
                     value="description"
-                    className="rounded-md data-[state=active]:bg-muted px-3 py-1.5 text-sm font-medium transition-all"
+                    className="px-3 py-1.5 text-sm font-medium transition-all"
                 >
                     角色提示词
                 </TabsTrigger>
@@ -121,7 +119,7 @@ function mainPresetTabs() {
             >
                 <TabsTrigger
                     value="personality"
-                    className="rounded-md data-[state=active]:bg-muted px-3 py-1.5 text-sm font-medium transition-all"
+                    className="px-3 py-1.5 text-sm font-medium transition-all"
                 >
                     世界书
                 </TabsTrigger>
@@ -135,7 +133,7 @@ function mainPresetTabs() {
             >
                 <TabsTrigger
                     value="world"
-                    className="rounded-md data-[state=active]:bg-muted px-3 py-1.5 text-sm font-medium transition-all"
+                    className="px-3 py-1.5 text-sm font-medium transition-all"
                 >
                     作者注释
                 </TabsTrigger>
@@ -156,7 +154,7 @@ function characterPresetTabs() {
             >
                 <TabsTrigger
                     value="basic_character"
-                    className="rounded-md data-[state=active]:bg-muted px-3 py-1.5 text-sm font-medium transition-all"
+                    className="px-3 py-1.5 text-sm font-medium transition-all"
                 >
                     基本配置
                 </TabsTrigger>
@@ -170,7 +168,7 @@ function characterPresetTabs() {
             >
                 <TabsTrigger
                     value="system_character"
-                    className="rounded-md data-[state=active]:bg-muted px-3 py-1.5 text-sm font-medium transition-all"
+                    className="px-3 py-1.5 text-sm font-medium transition-all"
                 >
                     系统消息
                 </TabsTrigger>
@@ -184,7 +182,7 @@ function characterPresetTabs() {
             >
                 <TabsTrigger
                     value="input_character"
-                    className="rounded-md data-[state=active]:bg-muted px-3 py-1.5 text-sm font-medium transition-all"
+                    className="px-3 py-1.5 text-sm font-medium transition-all"
                 >
                     输入消息
                 </TabsTrigger>
