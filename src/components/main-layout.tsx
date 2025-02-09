@@ -16,6 +16,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SettingsDialog } from "./settings-dialog";
+import { PresetModel, useRecentPresets } from "@/hooks/usePreset";
 
 interface MainLayoutProps {
     children: React.ReactNode;
@@ -23,6 +24,7 @@ interface MainLayoutProps {
 
 export function MainLayout({ children }: MainLayoutProps) {
     const [isOpen, setIsOpen] = React.useState(false);
+    const recentPresets = useRecentPresets();
 
     const Sidebar = () => (
         <div className="flex flex-col h-full">
@@ -30,27 +32,35 @@ export function MainLayout({ children }: MainLayoutProps) {
                 ChatLuna 预设编辑器
             </div>
 
-            <div className="flex-1 overflow-auto px-2 gap-y-2">
+            <div className="flex flex-col flex-1 overflow-auto px-2 gap-y-2">
                 <NavItem href="/" icon={FolderOpen} label="项目" />
                 <NavItem href="/square" icon={Users} label="广场" />
 
-                <div className="py-2">
-                    <div className="px-2 py-2">
-                        <h2 className="text-sm font-medium text-muted-foreground">
-                            最近编辑
-                        </h2>
+                {recentPresets.length > 0 && (
+                    <div className="py-2">
+                        <div className="px-2 py-2">
+                            <h2 className="text-sm font-medium text-muted-foreground">
+                                最近编辑
+                            </h2>
+                        </div>
+                        <nav className="space-y-4 gap-y-2 flex-col ">
+                            {recentPresets.map((preset) => (
+                                <NavItem
+                                    key={preset.id}
+                                    href={`/character/${preset.id}`}
+                                    icon={Tool}
+                                    label={preset.name}
+                                />
+                            ))}
+                        </nav>
+                        <Link
+                            href="/"
+                            className="block px-2 py-2 text-xs text-muted-foreground hover:text-primary"
+                        >
+                            查看全部 <ChevronRight className="inline h-3 w-3" />
+                        </Link>
                     </div>
-                    <nav className="space-y-4 gap-y-2 flex-col ">
-                        <NavItem href="/character/1" icon={Tool} label="朱诺" />
-                        <NavItem href="/character/2" icon={Tool} label="露娜" />
-                    </nav>
-                    <Link
-                        href="/"
-                        className="block px-2 py-2 text-xs text-muted-foreground hover:text-primary"
-                    >
-                        查看全部 <ChevronRight className="inline h-3 w-3" />
-                    </Link>
-                </div>
+                )}
             </div>
 
             <SettingsDialog />

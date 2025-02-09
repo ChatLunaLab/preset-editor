@@ -135,3 +135,13 @@ export function isRoleBook(obj: unknown): obj is RoleBook {
 export function isRoleBookConfig(obj: unknown): obj is RoleBookConfig {
     return !isRoleBook(obj) && typeof obj === "object" && obj !== null;
 }
+
+export interface CharacterPresetTemplate {
+    name: string
+    status?: string
+    nick_name: string[]
+    input: string
+    system: string
+    mute_keyword?: string[]
+    path?: string
+}

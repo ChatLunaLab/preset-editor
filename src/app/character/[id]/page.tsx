@@ -4,7 +4,7 @@ import { CharacterEditor } from "@/components/character-editor"
 export default function CharacterEditPage({ params }: { params: { id: string } }) {
   return (
     <MainLayout>
-      <CharacterEditor characterId={params.id} />
+      <CharacterEditor presetId={params.id} />
     </MainLayout>
   )
 }
