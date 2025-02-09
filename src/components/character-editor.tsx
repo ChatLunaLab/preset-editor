@@ -3,11 +3,18 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CharacterBasicForm } from "./character-basic-form";
 import { CharacterDescriptionForm } from "./character-description-form";
-import { CharacterPersonalityForm } from "./character-personality-form";
+import { CharacterMessagesForm } from "./character-messages";
 import { CharacterWorldForm } from "./character-world-form";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { getPreset } from "@/hooks/usePreset";
+import {
+    getPreset,
+    PresetModel,
+    updatePreset as updatePresetToLocal,
+} from "@/hooks/usePreset";
+import { RawPreset } from "@/types/preset";
+import { GetNestedType, NestedKeyOf } from "@/types/util";
+import { updateNestedObject } from "@/lib/utils";
 
 interface CharacterEditorProps {
     presetId: string;
@@ -29,16 +36,25 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
         exit: { opacity: 0, x: 20 },
     };
 
+    const updatePreset = async <K extends PresetModel["preset"]>(
+        key: NestedKeyOf<K>,
+        value: GetNestedType<PresetModel["preset"], NestedKeyOf<K>>
+    ) => {
+        console.log(key,value)
+        preset.preset = updateNestedObject(preset.preset, key, value);
+        await updatePresetToLocal(preset.id, preset.preset);
+    };
+
     return (
-        <div className="flex flex-col h-full px-6">
-            <div className="border-b">
-                <div className="flex h-16 items-center w-full">
+        <div className="flex flex-col h-full px-6 scroll-auto">
+            <div className="border-b bg-background sticky top-0 w-full">
+                <div className="flex h-16 items-center w-full ">
                     <Tabs
                         defaultValue="basic"
                         className="w-full"
                         onValueChange={setActiveTab}
                     >
-                        <TabsList className="h-10  p-0">
+                        <TabsList className="h-10 p-0">
                             {preset.type === "main"
                                 ? mainPresetTabs()
                                 : characterPresetTabs()}
@@ -58,13 +74,20 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                             transition={{ duration: 0.2 }}
                         >
                             {activeTab === "basic" && <CharacterBasicForm />}
-                            {activeTab === "description" && (
+                            {activeTab === "messages" && (
+                                <CharacterMessagesForm
+                                    updatePreset={(key, value) =>
+                                        updatePreset<RawPreset>(key, value as any)
+                                    }
+                                    preset={preset.preset as RawPreset}
+                                />
+                            )}
+                            {activeTab === "world_books" && (
                                 <CharacterDescriptionForm />
                             )}
-                            {activeTab === "personality" && (
-                                <CharacterPersonalityForm />
+                            {activeTab === "author_note" && (
+                                <CharacterWorldForm />
                             )}
-                            {activeTab === "world" && <CharacterWorldForm />}
                         </motion.div>
                     </AnimatePresence>
                 </div>
@@ -104,7 +127,7 @@ function mainPresetTabs() {
                 transition={{ duration: 0.2 }}
             >
                 <TabsTrigger
-                    value="description"
+                    value="messages"
                     className="px-3 py-1.5 text-sm font-medium transition-all"
                 >
                     角色提示词
@@ -118,7 +141,7 @@ function mainPresetTabs() {
                 transition={{ duration: 0.2 }}
             >
                 <TabsTrigger
-                    value="personality"
+                    value="world_books"
                     className="px-3 py-1.5 text-sm font-medium transition-all"
                 >
                     世界书
@@ -132,7 +155,7 @@ function mainPresetTabs() {
                 transition={{ duration: 0.2 }}
             >
                 <TabsTrigger
-                    value="world"
+                    value="author_note"
                     className="px-3 py-1.5 text-sm font-medium transition-all"
                 >
                     作者注释

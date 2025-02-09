@@ -48,6 +48,7 @@ export interface RawPreset {
     };
 }
 
+
 export interface RoleBook {
     keywords: (string | RegExp)[];
     content: string;
