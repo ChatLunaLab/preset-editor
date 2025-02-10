@@ -50,10 +50,10 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
     return (
         <div className="flex flex-col h-full px-6 scroll-auto">
             <div className="border-b bg-background sticky top-0 w-full">
-                <div className="flex h-16 items-center w-full justify-between">
+                <div className="flex h-16 items-center w-full justify-between bg-background ">
                     <Tabs
                         defaultValue="basic"
-                        className="w-full "
+                        className="w-full bg-background"
                         onValueChange={setActiveTab}
                     >
                         <TabsList className="h-10 ">
