@@ -53,10 +53,10 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                 <div className="flex h-16 items-center w-full justify-between">
                     <Tabs
                         defaultValue="basic"
-                        className="w-full"
+                        className="w-full "
                         onValueChange={setActiveTab}
                     >
-                        <TabsList className="h-10 p-0">
+                        <TabsList className="h-10 ">
                             {preset.type === "main"
                                 ? mainPresetTabs()
                                 : characterPresetTabs()}
