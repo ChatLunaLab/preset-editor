@@ -1,12 +1,15 @@
 "use client";
 
+
 import {
     CharacterPresetTemplate,
+    isRawPreset,
     PresetTemplate,
     RawPreset,
 } from "@/types/preset";
 import { Dexie } from "dexie";
 import { useLiveQuery } from "dexie-react-hooks";
+import { dump, load } from "js-yaml";
 
 const db = new Dexie("chatluna-preset") as Dexie & {
     presets: Dexie.Table<PresetModel, string>;
@@ -83,4 +86,45 @@ export function getPreset(id: string) {
         [id],
         undefined as PresetModel | undefined
     );
+}
+
+export function getPresetPromise(id: string) {
+    return db.presets.get(id);
+}
+
+export const exportPreset = (preset: PresetModel) => {
+    const blob = new Blob([makeYaml(preset)], {
+        type: "application/yaml;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const name =
+        preset.type === "character"
+            ? (preset.preset as CharacterPresetTemplate).name
+            : (preset.preset as RawPreset).keywords[0];
+    a.download = `${name}.yml`;
+
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+};
+
+export async function importPreset(preset: string) {
+    let rawPreset = load(preset) as RawPreset | CharacterPresetTemplate;
+
+    if (isRawPreset(rawPreset)) {
+        rawPreset = rawPreset as RawPreset;
+        return await createPreset({
+            name: rawPreset.keywords[0],
+            type: "main",
+            preset: rawPreset
+        });
+    } 
+
+    throw new Error("Invalid preset");
+}
+
+export function makeYaml(preset: PresetModel) {
+    return dump(preset.preset);
 }

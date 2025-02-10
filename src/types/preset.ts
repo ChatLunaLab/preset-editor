@@ -1,3 +1,4 @@
+"use client";
 export interface RawPreset {
     keywords: string[];
     prompts: BaseMessage[];
@@ -149,6 +150,26 @@ export function isRoleBook(obj: unknown): obj is RoleBook {
 
 export function isRoleBookConfig(obj: unknown): obj is RoleBookConfig {
     return !isRoleBook(obj) && typeof obj === "object" && obj !== null;
+}
+
+export function isRawPreset(obj: unknown): obj is RawPreset {
+    return (
+        typeof obj === "object" &&
+        obj!== null &&
+        "keywords" in obj &&
+        "prompts" in obj
+    );
+}
+
+export function isCharacterPresetTemplate(obj: unknown): obj is CharacterPresetTemplate {
+    return (
+        typeof obj === "object" &&
+        obj!== null &&
+        "name" in obj &&
+        "nick_name" in obj &&
+        "input" in obj &&
+        "system" in obj
+    );
 }
 
 export interface CharacterPresetTemplate {

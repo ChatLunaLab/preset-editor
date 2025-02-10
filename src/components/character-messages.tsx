@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "./ui/switch";
 import { RawPreset } from "@/types/preset";
+
 import { GetNestedType, NestedKeyOf } from "@/types/util";
 import { Button } from "./ui/button";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
@@ -16,6 +16,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "./ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 interface CharacterMessagesFormProps {
     updatePreset?: <K extends NestedKeyOf<RawPreset>>(
@@ -58,7 +59,6 @@ export function CharacterMessagesForm({
                                         ? prompts[prompts.length - 1]
                                         : null;
 
-                                console.log(lastPrompt);
                                 updatePreset?.("prompts", [
                                     ...prompts,
                                     {
@@ -142,9 +142,9 @@ export function CharacterMessagesForm({
                                     <div className="space-y-2 flex-grow">
                                         <Label>消息内容</Label>
                                         <Textarea
-                                            className="mt-4"
+                                            className="mt-4 min-h-[60px]"
+                                            rows={10}
                                             value={message.content}
-                                            rows={3}
                                             onChange={(e) => {
                                                 updatePreset?.(
                                                     `prompts.${index}.content`,
@@ -153,20 +153,6 @@ export function CharacterMessagesForm({
                                             }}
                                         />
                                     </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="mt-10"
-                                        onClick={() => {
-                                            updatePreset?.("prompts", [
-                                                ...preset.prompts.filter(
-                                                    (_, i) => i !== index
-                                                ),
-                                            ]);
-                                        }}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
                                 </div>
                             ))}
                         </CardContent>

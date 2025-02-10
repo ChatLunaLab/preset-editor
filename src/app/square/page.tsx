@@ -1,5 +1,5 @@
 import { MainLayout } from "@/components/main-layout";
-import { useRecentPresets } from "@/hooks/usePreset";
+import { useRecentPresets } from "@/hooks/use-preset";
 
 export default function SquarePage() {
     return (

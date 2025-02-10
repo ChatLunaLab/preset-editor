@@ -8,13 +8,16 @@ import { CharacterAuthorNote } from "./character-author-note";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import {
+    exportPreset,
     getPreset,
     PresetModel,
     updatePreset as updatePresetToLocal,
-} from "@/hooks/usePreset";
-import { RawPreset } from "@/types/preset";
+} from "@/hooks/use-preset";
+import { CharacterPresetTemplate, RawPreset } from "@/types/preset";
 import { GetNestedType, NestedKeyOf } from "@/types/util";
-import { updateNestedObject } from "@/lib/utils";
+import { cn, updateNestedObject } from "@/lib/utils";
+import { Button } from "./ui/button";
+import { ChevronDown, Download } from "lucide-react";
 
 interface CharacterEditorProps {
     presetId: string;
@@ -40,7 +43,6 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
         key: NestedKeyOf<K>,
         value: GetNestedType<PresetModel["preset"], NestedKeyOf<K>>
     ) => {
-        console.log(key, value);
         preset.preset = updateNestedObject(preset.preset, key, value);
         await updatePresetToLocal(preset.id, preset.preset);
     };
@@ -48,7 +50,7 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
     return (
         <div className="flex flex-col h-full px-6 scroll-auto">
             <div className="border-b bg-background sticky top-0 w-full">
-                <div className="flex h-16 items-center w-full ">
+                <div className="flex h-16 items-center w-full justify-between">
                     <Tabs
                         defaultValue="basic"
                         className="w-full"
@@ -60,6 +62,20 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                                 : characterPresetTabs()}
                         </TabsList>
                     </Tabs>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                            exportPreset(preset);
+                        }}
+                        className="h-8 w-8 p-0"
+                    >
+                        <Download
+                            className={cn(
+                                "h-4 w-4 transition-transform duration-200"
+                            )}
+                        />
+                    </Button>
                 </div>
             </div>
             <div className="flex-1 overflow-auto">

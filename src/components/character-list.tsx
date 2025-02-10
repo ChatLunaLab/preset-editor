@@ -36,7 +36,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { deletePreset, PresetModel } from "@/hooks/usePreset";
+import {
+    deletePreset,
+    exportPreset,
+    getPresetPromise,
+    PresetModel,
+} from "@/hooks/use-preset";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -220,7 +225,17 @@ export function CharacterList({
                                             >
                                                 编辑
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onClick={async () => {
+                                                    const preset =
+                                                        await getPresetPromise(
+                                                            character.id
+                                                        );
+                                                    // TODO: toast error
+                                                    if (!preset) return;
+                                                    exportPreset(preset);
+                                                }}
+                                            >
                                                 导出
                                             </DropdownMenuItem>
                                             <DropdownMenuItem

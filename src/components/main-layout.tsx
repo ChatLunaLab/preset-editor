@@ -16,7 +16,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SettingsDialog } from "./settings-dialog";
-import { PresetModel, useRecentPresets } from "@/hooks/usePreset";
+import { PresetModel, useRecentPresets } from "@/hooks/use-preset";
+import { Toaster } from "./ui/toaster";
 
 interface MainLayoutProps {
     children: React.ReactNode;
@@ -96,6 +97,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                 {/* Mobile header spacing */}
                 {children}
             </div>
+            <Toaster />
         </div>
     );
 }

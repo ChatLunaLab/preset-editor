@@ -4,13 +4,15 @@ import { MainLayout } from "@/components/main-layout";
 import { CharacterList } from "@/components/character-list";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { usePresets } from "@/hooks/usePreset";
+import { importPreset, usePresets } from "@/hooks/use-preset";
 import { NewPresetDialog } from "@/components/new-preset-dialog";
 import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Page() {
     const presets = usePresets();
+    const { toast } = useToast()
     const [searchQuery, setSearchQuery] = useState("");
 
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -19,12 +21,17 @@ export default function Page() {
         const file = event.target.files?.[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = async (e) => {
                 try {
-                    // TODO: Implement the logic to create a new preset from the imported data
-                    console.log("Imported data:", e.target?.result);
+                    const data = e.target?.result as string
+                    await importPreset(data)
                 } catch (error) {
-                    console.error("Error parsing imported data:", error);
+                    toast({
+                        title: "导入失败",
+                        description: "导入的文件格式不正确",
+                        variant: "destructive",
+                    });
+                    console.error(error);
                 }
             };
             reader.readAsText(file);

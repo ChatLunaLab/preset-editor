@@ -17,7 +17,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { createMainPreset } from "@/hooks/usePreset";
+import { createMainPreset } from "@/hooks/use-preset";
 
 export function NewPresetDialog() {
     const [name, setName] = useState("");
