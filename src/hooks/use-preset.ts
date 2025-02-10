@@ -1,10 +1,8 @@
 "use client";
 
-
 import {
     CharacterPresetTemplate,
     isRawPreset,
-    PresetTemplate,
     RawPreset,
 } from "@/types/preset";
 import { Dexie } from "dexie";
@@ -118,9 +116,9 @@ export async function importPreset(preset: string) {
         return await createPreset({
             name: rawPreset.keywords[0],
             type: "main",
-            preset: rawPreset
+            preset: rawPreset,
         });
-    } 
+    }
 
     throw new Error("Invalid preset");
 }
