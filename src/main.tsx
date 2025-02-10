@@ -3,13 +3,13 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 
 import { ThemeProvider } from "@/components/ui/theme";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createHashRouter, RouterProvider } from "react-router-dom";
 
 const CharacterEditPage = lazy(() => import("./pages/character/page.tsx"));
 const SquarePage = lazy(() => import("./pages/square/page.tsx"));
 const Page = lazy(() => import("./pages/app.tsx"));
 
-const router = createBrowserRouter([
+const router = createHashRouter([
     {
         path: "/",
         element: (
