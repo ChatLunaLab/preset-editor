@@ -15,6 +15,7 @@ import {
     SelectValue,
 } from "./ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 interface CharacterMessagesFormProps {
     updatePreset?: <K extends NestedKeyOf<RawPreset>>(
@@ -39,8 +40,10 @@ export function CharacterMessagesForm({
         }));
     };
 
+    const isMobile = useMediaQuery("(max-width: 768px)");
+
     return (
-        <div className="grid gap-6">
+        <div className="grid gap-6 sm:grid-cols-1">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between p-6">
                     <CardTitle>消息列表</CardTitle>
@@ -108,9 +111,12 @@ export function CharacterMessagesForm({
                             {preset.prompts.map((message, index) => (
                                 <div
                                     key={index}
-                                    className="flex gap-4 items-start"
+                                    className={cn(
+                                        "flex gap-4 items-start w-full",
+                                        isMobile ? "flex-col" : ""
+                                    )}
                                 >
-                                    <div className="space-y-2">
+                                    <div className={`space-y-2 ${isMobile ? 'w-full' : ''}`}>
                                         <Label>消息类型</Label>
                                         <Select
                                             value={message.role}
@@ -138,11 +144,11 @@ export function CharacterMessagesForm({
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                    <div className="space-y-2 flex-grow">
+                                    <div className="space-y-2 flex-grow w-full">
                                         <Label>消息内容</Label>
                                         <Textarea
                                             className="mt-4 min-h-[60px]"
-                                            rows={5}
+                                            rows={isMobile ? 30 : 5}
                                             value={message.content}
                                             onChange={(e) => {
                                                 updatePreset?.(

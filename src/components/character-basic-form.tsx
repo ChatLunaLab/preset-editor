@@ -217,7 +217,7 @@ export function CharacterBasicForm({
                     <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => toggleSection("basic")}
+                        onClick={() => toggleSection("knowledge")}
                         className="h-8 w-8 p-0"
                     >
                         <ChevronDown

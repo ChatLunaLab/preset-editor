@@ -42,7 +42,7 @@ export function CharacterAuthorNote({
     };
 
     return (
-        <div className="grid gap-6">
+        <div className="grid gap-6 sm:grid-cols-1">
             <Card className="rounded-xl">
                 <CardHeader className="flex flex-row items-center justify-between p-6">
                     <CardTitle>作者注释</CardTitle>

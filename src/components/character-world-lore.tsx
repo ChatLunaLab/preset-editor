@@ -299,7 +299,7 @@ export function CharacterWorldLore({
     };
 
     return (
-        <div className="grid gap-6">
+        <div className="grid gap-6 sm:grid-cols-1">
             <div>
                 <div className="flex flex-row items-center justify-between p-6">
                     <CardTitle>世界书列表</CardTitle>
