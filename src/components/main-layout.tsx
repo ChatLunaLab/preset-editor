@@ -14,7 +14,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SettingsDialog } from "./settings-dialog";
 import { useRecentPresets } from "@/hooks/use-preset";
 import { Toaster } from "./ui/toaster";
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 interface MainLayoutProps {
     children: React.ReactNode;
@@ -45,18 +45,18 @@ export function MainLayout({ children }: MainLayoutProps) {
                             {recentPresets.map((preset) => (
                                 <NavItem
                                     key={preset.id}
-                                    href={`/character?id=${preset.id}`}
+                                    href={`/character/${preset.id}`}
                                     icon={Tool}
                                     label={preset.name}
                                 />
                             ))}
                         </nav>
-                        <a
-                            href="/"
+                        <Link
+                            to="/"
                             className="block px-2 py-2 text-xs text-muted-foreground hover:text-primary"
                         >
                             查看全部 <ChevronRight className="inline h-3 w-3" />
-                        </a>
+                        </Link>
                     </div>
                 )}
             </div>
@@ -111,7 +111,7 @@ function NavItem({ icon: Icon, label, href }: NavItemProps) {
     const isActive = pathname === href || pathname.startsWith(`${href}/`);
 
     return (
-        <a href={href}>
+        <Link to={href}>
             <Button
                 variant="ghost"
                 className={cn(
@@ -122,6 +122,6 @@ function NavItem({ icon: Icon, label, href }: NavItemProps) {
                 <Icon className="h-5 w-5" />
                 <span>{label}</span>
             </Button>
-        </a>
+        </Link>
     );
 }

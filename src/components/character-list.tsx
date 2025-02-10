@@ -33,7 +33,7 @@ import {
     getPreset,
     PresetModel,
 } from "@/hooks/use-preset";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 interface CharacterListProps {
     presets: PresetModel[];
@@ -177,12 +177,12 @@ export function CharacterList({
                     {characters.map((character) => (
                         <TableRow key={character.id}>
                             <TableCell>
-                                <a
-                                    href={`/character?id=${character.id}`}
+                                <Link
+                                    to={`/character/${character.id}`}
                                     className="font-medium hover:text-primary ml-4"
                                 >
                                     {character.name}
-                                </a>
+                                </Link>
                             </TableCell>
                             <TableCell className="hidden md:table-cell">
                                 <span className="ml-4">{character.type}</span>
@@ -209,7 +209,7 @@ export function CharacterList({
                                             <DropdownMenuItem
                                                 onClick={() => {
                                                     navigate(
-                                                        `/character?id=${character.id}`
+                                                        `/character/${character.id}`
                                                     );
                                                 }}
                                             >
