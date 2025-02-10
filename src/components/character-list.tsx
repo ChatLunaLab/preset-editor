@@ -124,7 +124,7 @@ export function CharacterList({
                                 )}
                             </Button>
                         </TableHead>
-                        <TableHead className="hidden md:table-cell">
+                        <TableHead className="table-cell">
                             <Button
                                 variant="ghost"
                                 onClick={() => sortCharacters("type")}
@@ -146,7 +146,7 @@ export function CharacterList({
                                 )}
                             </Button>
                         </TableHead>
-                        <TableHead className="hidden md:table-cell">
+                        <TableHead className="table-cell">
                             <Button
                                 variant="ghost"
                                 onClick={() => sortCharacters("lastModified")}
@@ -184,10 +184,10 @@ export function CharacterList({
                                     {character.name}
                                 </Link>
                             </TableCell>
-                            <TableCell className="hidden md:table-cell">
+                            <TableCell className="table-cell">
                                 <span className="ml-4">{character.type}</span>
                             </TableCell>
-                            <TableCell className="hidden md:table-cell ml-4">
+                            <TableCell className="table-cell ml-4">
                                 <span className="ml-4">
                                     {new Date(
                                         character.lastModified

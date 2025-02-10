@@ -33,11 +33,12 @@ export function NewPresetDialog() {
         <Dialog>
             <DialogTrigger asChild>
                 <Button variant="default" className="flex-1 md:flex-none">
-                    <Plus className="w-4 h-4 mr-2" />
-                    新建预设
+                    <Plus className="w-4 h-4 md:mr-0 md:w-auto md:h-auto" />
+
+                    <span className="hidden md:inline">新建预设</span>
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="max-w-[90vw] sm:max-w-[90vw] md:max-w-[425px] rounded-2xl">
                 <DialogHeader>
                     <DialogTitle>新建预设</DialogTitle>
                 </DialogHeader>

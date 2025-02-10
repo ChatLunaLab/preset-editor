@@ -89,7 +89,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             </Sheet>
 
             {/* Main Content */}
-            <div className="flex-1">
+            <div className="flex-1 w-full">
                 <div className="md:hidden h-16 border-b" />{" "}
                 {/* Mobile header spacing */}
                 {children}

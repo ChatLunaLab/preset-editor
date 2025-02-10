@@ -8,6 +8,7 @@ import { NewPresetDialog } from "@/components/new-preset-dialog";
 import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { Upload } from "lucide-react";
 
 export default function Page() {
     const presets = usePresets();
@@ -39,7 +40,7 @@ export default function Page() {
 
     return (
         <MainLayout>
-            <div className="container flex flex-col py-6 px-6">
+            <div className="container flex flex-col py-6 px-6 md:px-12 lg:px-24">
                 <div className="flex flex-col md:flex-row md:items-center  justify-between gap-4 mb-6">
                     <div className="text-2xl md:text-3xl font-bold"></div>
                     <div className="flex items-center gap-4">
@@ -54,8 +55,12 @@ export default function Page() {
                             <Button
                                 variant="secondary"
                                 onClick={() => fileInputRef.current?.click()}
+                                className="md:!p-2"
                             >
-                                导入预设
+                                <Upload className="h-4 w-4 md:mr-0" />
+                                <span className="hidden md:inline">
+                                    导入预设
+                                </span>
                             </Button>
                             <input
                                 ref={fileInputRef}
@@ -64,6 +69,7 @@ export default function Page() {
                                 className="hidden"
                                 onChange={handleImportData}
                             />
+
                             <NewPresetDialog />
                         </div>
                     </div>
