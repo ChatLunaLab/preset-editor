@@ -5,6 +5,7 @@ export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function updateNestedObject<T>(obj: T, path: string, value: any): T {
     const keys = path.split(".");
     if (keys.length === 0) return obj;
