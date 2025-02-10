@@ -1997,6 +1997,7 @@ __metadata:
     globals: "npm:^15.14.0"
     js-yaml: "npm:^4.1.0"
     lucide-react: "npm:^0.475.0"
+    postcss: "npm:^8.5.1"
     react: "npm:^19.0.0"
     react-dom: "npm:^19.0.0"
     react-router-dom: "npm:^7.1.5"
