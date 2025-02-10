@@ -1,21 +1,3 @@
-# ChatLuna 预设编辑器
-
-在线，专为 ChatLuna 设计的预设编辑器。
-
-## Roadmap
-
-- [x] 预设编辑器
-- [x] 预设管理
-- [ ] 伪装预设编辑器
-- [ ] 预设广场
-
-## Usage
-
-前往 [https://preset.chatluna.chat](https://preset.chatluna.chat) 体验。
-
-## LICENSE
-
-```text
 MIT License
 
 Copyright (c) 2025-present dingyi
@@ -37,4 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-```
