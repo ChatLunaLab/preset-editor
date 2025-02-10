@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import {
     exportPreset,
-    getPreset,
+    usePreset,
     PresetModel,
     updatePreset as updatePresetToLocal,
 } from "@/hooks/use-preset";
@@ -26,7 +26,7 @@ interface CharacterEditorProps {
 export function CharacterEditor({ presetId }: CharacterEditorProps) {
     const [activeTab, setActiveTab] = useState("basic");
 
-    const preset = getPreset(presetId);
+    const preset = usePreset(presetId);
 
     if (!preset) {
         // TODO: 404

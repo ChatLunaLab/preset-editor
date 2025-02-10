@@ -16,6 +16,7 @@ export function updateNestedObject<T>(obj: T, path: string, value: any): T {
 
     for (let i = 0; i < keys.length - 1; i++) {
         const key = keys[i];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const currentValue = (current as any)[key];
 
         // Create or copy next level
@@ -27,8 +28,9 @@ export function updateNestedObject<T>(obj: T, path: string, value: any): T {
                 : { ...currentValue };
 
         target[key as keyof typeof target] = nextValue;
-        target = nextValue;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         current = (current as any)[key];
+        target = nextValue;
     }
 
     const lastKey = keys[keys.length - 1];

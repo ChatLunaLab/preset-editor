@@ -30,7 +30,7 @@ import { useEffect, useState } from "react";
 import {
     deletePreset,
     exportPreset,
-    getPresetPromise,
+    getPreset,
     PresetModel,
 } from "@/hooks/use-preset";
 import { useNavigate } from "react-router-dom";
@@ -218,7 +218,7 @@ export function CharacterList({
                                             <DropdownMenuItem
                                                 onClick={async () => {
                                                     const preset =
-                                                        await getPresetPromise(
+                                                        await getPreset(
                                                             character.id
                                                         );
                                                     // TODO: toast error

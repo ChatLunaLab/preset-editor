@@ -78,7 +78,7 @@ export async function deletePreset(id: string) {
     return await db.presets.delete(id);
 }
 
-export function getPreset(id: string) {
+export function usePreset(id: string) {
     return useLiveQuery(
         () => db.presets.get(id),
         [id],
@@ -86,7 +86,7 @@ export function getPreset(id: string) {
     );
 }
 
-export function getPresetPromise(id: string) {
+export function getPreset(id: string) {
     return db.presets.get(id);
 }
 

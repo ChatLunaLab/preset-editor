@@ -8,16 +8,11 @@ import { NewPresetDialog } from "@/components/new-preset-dialog";
 import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect } from "react";
 
 export default function Page() {
     const presets = usePresets();
-    const { toast } = useToast()
+    const { toast } = useToast();
     const [searchQuery, setSearchQuery] = useState("");
-
-    useEffect(() => {
-        console.log("Presets:", presets);
-    }, [presets]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -27,8 +22,8 @@ export default function Page() {
             const reader = new FileReader();
             reader.onload = async (e) => {
                 try {
-                    const data = e.target?.result as string
-                    await importPreset(data)
+                    const data = e.target?.result as string;
+                    await importPreset(data);
                 } catch (error) {
                     toast({
                         title: "导入失败",
@@ -49,7 +44,6 @@ export default function Page() {
                     <div className="text-2xl md:text-3xl font-bold"></div>
                     <div className="flex items-center gap-4">
                         <Input
-                           
                             placeholder="搜索预设..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}

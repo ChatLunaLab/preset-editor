@@ -1,11 +1,7 @@
 import RootLayout from "./pages/layout";
 
 function App() {
-    return (
-        <>
-            <RootLayout />
-        </>
-    );
+    return <RootLayout />;
 }
 
 export default App;
