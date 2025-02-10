@@ -1,12 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Switch } from "./ui/switch";
 import { RawPreset } from "@/types/preset";
 
 import { GetNestedType, NestedKeyOf } from "@/types/util";
 import { Button } from "./ui/button";
-import { ChevronDown, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Plus } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -119,6 +117,7 @@ export function CharacterMessagesForm({
                                             onValueChange={(value) => {
                                                 updatePreset?.(
                                                     `prompts.${index}.role`,
+                                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                     value as any
                                                 );
                                             }}
@@ -143,7 +142,7 @@ export function CharacterMessagesForm({
                                         <Label>消息内容</Label>
                                         <Textarea
                                             className="mt-4 min-h-[60px]"
-                                            rows={10}
+                                            rows={5}
                                             value={message.content}
                                             onChange={(e) => {
                                                 updatePreset?.(

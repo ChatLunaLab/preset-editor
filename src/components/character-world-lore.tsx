@@ -11,7 +11,7 @@ import {
 } from "@/types/preset";
 import { GetNestedType, NestedKeyOf } from "@/types/util";
 import { Button } from "./ui/button";
-import { ChevronDown, Plus, Trash2, Code } from "lucide-react";
+import { Plus, Trash2, Code } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { isWorldLore } from "../types/preset";
@@ -37,17 +37,7 @@ export function CharacterWorldLore({
     updatePreset,
     preset,
 }: CharacterWorldLoreProps) {
-    const [openSections, setOpenSections] = useState({
-        messages: true,
-    });
     const [isRegexMap, setIsRegexMap] = useState<Record<string, boolean>>({});
-
-    const toggleSection = (section: keyof typeof openSections) => {
-        setOpenSections((prev) => ({
-            ...prev,
-            [section]: !prev[section],
-        }));
-    };
 
     const WorldLoresItem = (
         lore: RawWorldLore | WorldLoreConfig,
@@ -238,7 +228,6 @@ export function CharacterWorldLore({
                             />
                         </div>
 
-                      
                         <div className="space-y-2">
                             <Label>最大递归深度</Label>
                             <Input
@@ -262,6 +251,7 @@ export function CharacterWorldLore({
                                 onValueChange={(value) => {
                                     updatePreset?.(
                                         `world_lores.${index}.insertPosition`,
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                         value as any
                                     );
                                 }}

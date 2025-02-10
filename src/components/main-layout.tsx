@@ -3,21 +3,18 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import {
-    Grid,
     PenToolIcon as Tool,
-    Plus,
     Users,
     FolderOpen,
     Menu,
     ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SettingsDialog } from "./settings-dialog";
-import { PresetModel, useRecentPresets } from "@/hooks/use-preset";
+import { useRecentPresets } from "@/hooks/use-preset";
 import { Toaster } from "./ui/toaster";
+import { useLocation } from 'react-router-dom';
 
 interface MainLayoutProps {
     children: React.ReactNode;
@@ -48,18 +45,18 @@ export function MainLayout({ children }: MainLayoutProps) {
                             {recentPresets.map((preset) => (
                                 <NavItem
                                     key={preset.id}
-                                    href={`/character/${preset.id}`}
+                                    href={`/character?id=${preset.id}`}
                                     icon={Tool}
                                     label={preset.name}
                                 />
                             ))}
                         </nav>
-                        <Link
+                        <a
                             href="/"
                             className="block px-2 py-2 text-xs text-muted-foreground hover:text-primary"
                         >
                             查看全部 <ChevronRight className="inline h-3 w-3" />
-                        </Link>
+                        </a>
                     </div>
                 )}
             </div>
@@ -109,11 +106,12 @@ interface NavItemProps {
 }
 
 function NavItem({ icon: Icon, label, href }: NavItemProps) {
-    const pathname = usePathname();
+    const { pathname } = useLocation();
+  
     const isActive = pathname === href || pathname.startsWith(`${href}/`);
 
     return (
-        <Link href={href}>
+        <a href={href}>
             <Button
                 variant="ghost"
                 className={cn(
@@ -124,6 +122,6 @@ function NavItem({ icon: Icon, label, href }: NavItemProps) {
                 <Icon className="h-5 w-5" />
                 <span>{label}</span>
             </Button>
-        </Link>
+        </a>
     );
 }

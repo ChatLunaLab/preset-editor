@@ -13,11 +13,11 @@ import {
     PresetModel,
     updatePreset as updatePresetToLocal,
 } from "@/hooks/use-preset";
-import { CharacterPresetTemplate, RawPreset } from "@/types/preset";
+import { RawPreset } from "@/types/preset";
 import { GetNestedType, NestedKeyOf } from "@/types/util";
 import { cn, updateNestedObject } from "@/lib/utils";
 import { Button } from "./ui/button";
-import { ChevronDown, Download } from "lucide-react";
+import { Download } from "lucide-react";
 
 interface CharacterEditorProps {
     presetId: string;
@@ -94,6 +94,7 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                                     updatePreset={(key, value) =>
                                         updatePreset<RawPreset>(
                                             key,
+                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                             value as any
                                         )
                                     }
@@ -105,6 +106,7 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                                     updatePreset={(key, value) =>
                                         updatePreset<RawPreset>(
                                             key,
+                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                             value as any
                                         )
                                     }
@@ -116,6 +118,7 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                                     updatePreset={(key, value) =>
                                         updatePreset<RawPreset>(
                                             key,
+                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                             value as any
                                         )
                                     }
@@ -127,6 +130,7 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                                     updatePreset={(key, value) =>
                                         updatePreset<RawPreset>(
                                             key,
+                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                             value as any
                                         )
                                     }

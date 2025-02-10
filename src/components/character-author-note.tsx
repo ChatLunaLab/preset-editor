@@ -2,7 +2,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "./ui/switch";
 import { RawPreset } from "@/types/preset";
 import { GetNestedType, NestedKeyOf } from "@/types/util";
 import { Button } from "./ui/button";
@@ -130,6 +129,7 @@ export function CharacterAuthorNote({
                                         onValueChange={(value) => {
                                             updatePreset?.(
                                                 "authors_note.insertPosition",
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 value as any
                                             );
                                         }}

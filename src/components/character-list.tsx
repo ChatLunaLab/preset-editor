@@ -9,14 +9,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import {
-    ArrowUpDown,
-    ArrowUp,
-    MoreVerticalIcon,
-    Pencil,
-    Trash2,
-    Download,
-} from "lucide-react";
+import { ArrowUpDown, ArrowUp, MoreVerticalIcon } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -32,9 +25,7 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-    AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
     deletePreset,
@@ -42,8 +33,7 @@ import {
     getPresetPromise,
     PresetModel,
 } from "@/hooks/use-preset";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 
 interface CharacterListProps {
     presets: PresetModel[];
@@ -63,7 +53,7 @@ export function CharacterList({
     const [selectedCharacterId, setSelectedCharacterId] = useState<
         string | null
     >(null);
-    const router = useRouter();
+    const navigate = useNavigate();
 
     const sortCharacters = (key: SortKey) => {
         const newSortOrder =
@@ -90,7 +80,7 @@ export function CharacterList({
     if (initialCharacters.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center h-full w-full">
-                <Image
+                <img
                     width="100"
                     height="100"
                     src="/images/empty-state.svg"
@@ -187,12 +177,12 @@ export function CharacterList({
                     {characters.map((character) => (
                         <TableRow key={character.id}>
                             <TableCell>
-                                <Link
-                                    href={`/character/${character.id}`}
+                                <a
+                                    href={`/character?id=${character.id}`}
                                     className="font-medium hover:text-primary ml-4"
                                 >
                                     {character.name}
-                                </Link>
+                                </a>
                             </TableCell>
                             <TableCell className="hidden md:table-cell">
                                 <span className="ml-4">{character.type}</span>
@@ -218,8 +208,8 @@ export function CharacterList({
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuItem
                                                 onClick={() => {
-                                                    router.push(
-                                                        `/character/${character.id}`
+                                                    navigate(
+                                                        `/character?id=${character.id}`
                                                     );
                                                 }}
                                             >

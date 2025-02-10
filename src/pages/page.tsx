@@ -3,17 +3,21 @@
 import { MainLayout } from "@/components/main-layout";
 import { CharacterList } from "@/components/character-list";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { importPreset, usePresets } from "@/hooks/use-preset";
 import { NewPresetDialog } from "@/components/new-preset-dialog";
 import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 
 export default function Page() {
     const presets = usePresets();
     const { toast } = useToast()
     const [searchQuery, setSearchQuery] = useState("");
+
+    useEffect(() => {
+        console.log("Presets:", presets);
+    }, [presets]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 

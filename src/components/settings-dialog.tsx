@@ -20,7 +20,6 @@ import {
     Download,
     Upload,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import React, { useState, useRef } from "react";
 import {
@@ -38,7 +37,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Separator } from "./ui/separator";
-import Link from "next/link";
+import { useTheme } from "@/hooks/use-theme";
 
 interface SettingsCategoryProps {
     title: string;
