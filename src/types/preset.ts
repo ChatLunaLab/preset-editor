@@ -2,40 +2,7 @@ export interface RawPreset {
     keywords: string[];
     prompts: BaseMessage[];
     format_user_prompt?: string;
-    world_lores?: (
-        | {
-              scanDepth?: number;
-              tokenLimit?: number;
-              recursiveScan?: boolean;
-              maxRecursionDepth?: number;
-              insertPosition?:
-                  | "before_char_defs"
-                  | "after_char_defs"
-                  | "before_scenario"
-                  | "after_scenario"
-                  | "before_example_messages"
-                  | "after_example_messages";
-          }
-        | {
-              keywords: string | (string | RegExp)[];
-              content: string;
-              insertPosition?:
-                  | "before_char_defs"
-                  | "after_char_defs"
-                  | "before_scenario"
-                  | "after_scenario"
-                  | "before_example_messages"
-                  | "after_example_messages";
-              scanDepth?: number;
-              recursiveScan?: boolean;
-              maxRecursionDepth?: number;
-              matchWholeWord?: boolean;
-              constant?: boolean;
-              caseSensitive?: boolean;
-              enabled?: boolean;
-              order?: number;
-          }
-    )[];
+    world_lores?: (WorldLoreConfig | RawWorldLore)[];
     version?: string;
     authors_note?: AuthorsNote;
     knowledge?: KnowledgeConfig;
@@ -48,6 +15,53 @@ export interface RawPreset {
     };
 }
 
+export interface RawWorldLore {
+    keywords: string | (string | RegExp)[];
+    content: string;
+    insertPosition?:
+        | "before_char_defs"
+        | "after_char_defs"
+        | "before_scenario"
+        | "after_scenario"
+        | "before_example_messages"
+        | "after_example_messages";
+    scanDepth?: number;
+    recursiveScan?: boolean;
+    maxRecursionDepth?: number;
+    matchWholeWord?: boolean;
+    constant?: boolean;
+    caseSensitive?: boolean;
+    enabled?: boolean;
+    order?: number;
+    tokenLimit?: number;
+}
+
+export interface WorldLoreConfig extends RawWorldLore {
+    scanDepth?: number;
+    tokenLimit?: number;
+    recursiveScan?: boolean;
+    maxRecursionDepth?: number;
+    insertPosition?:
+        | "before_char_defs"
+        | "after_char_defs"
+        | "before_scenario"
+        | "after_scenario"
+        | "before_example_messages"
+        | "after_example_messages";
+}
+
+export function isWorldLoreConfig(obj: RawWorldLore | WorldLoreConfig): obj is WorldLoreConfig {
+    return !isWorldLore(obj) && typeof obj === "object" && obj !== null;
+}
+
+export function isWorldLore(obj: RawWorldLore | WorldLoreConfig): obj is RawWorldLore {
+    return (
+        typeof obj === "object" &&
+        obj !== null &&
+        "keywords" in obj &&
+        "content" in obj
+    );
+}
 
 export interface RoleBook {
     keywords: (string | RegExp)[];
@@ -138,11 +152,11 @@ export function isRoleBookConfig(obj: unknown): obj is RoleBookConfig {
 }
 
 export interface CharacterPresetTemplate {
-    name: string
-    status?: string
-    nick_name: string[]
-    input: string
-    system: string
-    mute_keyword?: string[]
-    path?: string
+    name: string;
+    status?: string;
+    nick_name: string[];
+    input: string;
+    system: string;
+    mute_keyword?: string[];
+    path?: string;
 }

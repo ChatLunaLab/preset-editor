@@ -15,9 +15,10 @@ interface CharacterBasicFormProps {
         key: K,
         value: GetNestedType<RawPreset, K>
     ) => void;
+    preset: RawPreset;
 }
 
-export function CharacterBasicForm({ updatePreset }: CharacterBasicFormProps) {
+export function CharacterBasicForm({ updatePreset, preset }: CharacterBasicFormProps) {
     const [openSections, setOpenSections] = useState({
         basic: true,
         other: false,
@@ -59,9 +60,13 @@ export function CharacterBasicForm({ updatePreset }: CharacterBasicFormProps) {
                                     <Label htmlFor="name">预设名称</Label>
                                     <Input
                                         id="name"
+                                        type="string"
+                                        value={preset.keywords.join(",")}
                                         placeholder="预设名称"
-                                        onChange={(e) =>
-                                            updatePreset?.("keywords", [e.target.value])
+                                        onChange={(e) => {
+                                            const keywords = e.target.value.split(",");
+                                            updatePreset?.("keywords", keywords);
+                                        }
                                         }
                                     />
                                 </div>
@@ -69,6 +74,8 @@ export function CharacterBasicForm({ updatePreset }: CharacterBasicFormProps) {
                                     <Label htmlFor="type">版本号（可选）</Label>
                                     <Input
                                         id="type"
+                                        type="string"
+                                        value={preset.version}
                                         placeholder="预设的版本号"
                                         className="rounded-lg"
                                         onChange={(e) =>
@@ -83,6 +90,7 @@ export function CharacterBasicForm({ updatePreset }: CharacterBasicFormProps) {
                                     id="description"
                                     placeholder="用户的格式化输入"
                                     className="min-h-[100px] rounded-lg"
+                                    value={preset.format_user_prompt}
                                     onChange={(e) =>
                                         updatePreset?.(
                                             "format_user_prompt",
@@ -126,6 +134,7 @@ export function CharacterBasicForm({ updatePreset }: CharacterBasicFormProps) {
                                         id="long_memory_prompt"
                                         type="string"
                                         className="rounded-lg"
+                                        value={preset.config?.longMemoryPrompt}
                                         onChange={(e) =>
                                             updatePreset?.(
                                                 "config.longMemoryPrompt",
@@ -142,6 +151,7 @@ export function CharacterBasicForm({ updatePreset }: CharacterBasicFormProps) {
                                         id="height"
                                         type="string"
                                         className="rounded-lg"
+                                        value={preset.config?.longMemoryNewQuestionPrompt}
                                         onChange={(e) =>
                                             updatePreset?.(
                                                 "config.longMemoryNewQuestionPrompt",
@@ -157,6 +167,7 @@ export function CharacterBasicForm({ updatePreset }: CharacterBasicFormProps) {
                                     <Input
                                         id="long_term_memory_extraction_prompt"
                                         type="string"
+                                        value={preset.config?.longMemoryExtractPrompt}
                                         className="rounded-lg"
                                         onChange={(e) =>
                                             updatePreset?.(
@@ -171,6 +182,8 @@ export function CharacterBasicForm({ updatePreset }: CharacterBasicFormProps) {
                                 <Label htmlFor="appearance">世界书检索 Prompt</Label>
                                 <Textarea
                                     id="appearance"
+                                    placeholder="世界书检索 Prompt"
+                                    value={preset.config?.loreBooksPrompt}
                                     className="min-h-[100px] rounded-lg"
                                     onChange={(e) =>
                                         updatePreset?.(
@@ -215,6 +228,7 @@ export function CharacterBasicForm({ updatePreset }: CharacterBasicFormProps) {
                                         id="prefix"
                                         type="string"
                                         className="rounded-lg"
+                                        value={preset.config?.postHandler?.prefix}
                                         onChange={(e) =>
                                             updatePreset?.(
                                                 "config.postHandler.prefix",
@@ -230,6 +244,7 @@ export function CharacterBasicForm({ updatePreset }: CharacterBasicFormProps) {
                                     <Input
                                         id="suffix"
                                         type="string"
+                                        value={preset.config?.postHandler?.postfix}
                                         className="rounded-lg"
                                         onChange={(e) =>
                                             updatePreset?.(

@@ -58,7 +58,7 @@ export function CharacterMessagesForm({
                                         ? prompts[prompts.length - 1]
                                         : null;
 
-                                        console.log(lastPrompt)
+                                console.log(lastPrompt);
                                 updatePreset?.("prompts", [
                                     ...prompts,
                                     {
@@ -113,8 +113,16 @@ export function CharacterMessagesForm({
                                     className="flex gap-4 items-start"
                                 >
                                     <div className="space-y-2">
-                                        <Label>角色</Label>
-                                        <Select value={message.role}>
+                                        <Label>消息类型</Label>
+                                        <Select
+                                            value={message.role}
+                                            onValueChange={(value) => {
+                                                updatePreset?.(
+                                                    `prompts.${index}.role`,
+                                                    value as any
+                                                );
+                                            }}
+                                        >
                                             <SelectTrigger className="w-[120px] mt-4">
                                                 <SelectValue />
                                             </SelectTrigger>
@@ -132,17 +140,30 @@ export function CharacterMessagesForm({
                                         </Select>
                                     </div>
                                     <div className="space-y-2 flex-grow">
-                                        <Label>内容</Label>
+                                        <Label>消息内容</Label>
                                         <Textarea
                                             className="mt-4"
                                             value={message.content}
                                             rows={3}
+                                            onChange={(e) => {
+                                                updatePreset?.(
+                                                    `prompts.${index}.content`,
+                                                    e.target.value
+                                                );
+                                            }}
                                         />
                                     </div>
                                     <Button
                                         variant="ghost"
                                         size="icon"
                                         className="mt-10"
+                                        onClick={() => {
+                                            updatePreset?.("prompts", [
+                                                ...preset.prompts.filter(
+                                                    (_, i) => i !== index
+                                                ),
+                                            ]);
+                                        }}
                                     >
                                         <Trash2 className="h-4 w-4" />
                                     </Button>

@@ -2,9 +2,9 @@
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CharacterBasicForm } from "./character-basic-form";
-import { CharacterDescriptionForm } from "./character-description-form";
+import { CharacterWorldLore } from "./character-world-lore";
 import { CharacterMessagesForm } from "./character-messages";
-import { CharacterWorldForm } from "./character-world-form";
+import { CharacterAuthorNote } from "./character-author-note";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import {
@@ -40,7 +40,7 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
         key: NestedKeyOf<K>,
         value: GetNestedType<PresetModel["preset"], NestedKeyOf<K>>
     ) => {
-        console.log(key,value)
+        console.log(key, value);
         preset.preset = updateNestedObject(preset.preset, key, value);
         await updatePresetToLocal(preset.id, preset.preset);
     };
@@ -73,20 +73,49 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                             variants={tabVariants}
                             transition={{ duration: 0.2 }}
                         >
-                            {activeTab === "basic" && <CharacterBasicForm />}
+                            {activeTab === "basic" && (
+                                <CharacterBasicForm
+                                    updatePreset={(key, value) =>
+                                        updatePreset<RawPreset>(
+                                            key,
+                                            value as any
+                                        )
+                                    }
+                                    preset={preset.preset as RawPreset}
+                                />
+                            )}
                             {activeTab === "messages" && (
                                 <CharacterMessagesForm
                                     updatePreset={(key, value) =>
-                                        updatePreset<RawPreset>(key, value as any)
+                                        updatePreset<RawPreset>(
+                                            key,
+                                            value as any
+                                        )
                                     }
                                     preset={preset.preset as RawPreset}
                                 />
                             )}
                             {activeTab === "world_books" && (
-                                <CharacterDescriptionForm />
+                                <CharacterWorldLore
+                                    updatePreset={(key, value) =>
+                                        updatePreset<RawPreset>(
+                                            key,
+                                            value as any
+                                        )
+                                    }
+                                    preset={preset.preset as RawPreset}
+                                />
                             )}
                             {activeTab === "author_note" && (
-                                <CharacterWorldForm />
+                                <CharacterAuthorNote
+                                    updatePreset={(key, value) =>
+                                        updatePreset<RawPreset>(
+                                            key,
+                                            value as any
+                                        )
+                                    }
+                                    preset={preset.preset as RawPreset}
+                                />
                             )}
                         </motion.div>
                     </AnimatePresence>
