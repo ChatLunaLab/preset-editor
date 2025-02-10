@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "./ui/separator";
 import { useTheme } from "@/hooks/use-theme";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 interface SettingsCategoryProps {
     title: string;
@@ -54,10 +55,10 @@ export function SettingsDialog() {
     const { theme, setTheme } = useTheme();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [selectedCategory, setSelectedCategory] = useState(settingsCategories[0].value);
+    const isMobile = useMediaQuery('(max-width: 768px)');
 
     const handleExportData = () => {
         const data = {
-            // Add your data structure here
             characters: [],
             settings: {},
         };
@@ -210,37 +211,63 @@ export function SettingsDialog() {
                     <span>设置</span>
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[800px] rounded-4xl">
+            <DialogContent className={cn(
+                "rounded-2xl",
+                isMobile ? "max-w-[90vw]" : "max-w-[400px] sm:max-w-[800px]"
+            )}>
                 <DialogHeader>
                     <DialogTitle>设置</DialogTitle>
                 </DialogHeader>
-                <div className="flex h-[400px]">
-                    <div className="w-[200px] border-r flex flex-col pr-6">
-                        {settingsCategories.map((category) => (
-                            <Button
-                                key={category.value}
-                                variant="ghost"
-                                className={cn(
-                                    "w-full justify-start gap-3 px-2 mt-0 h-10 rounded-lg",
-                                    selectedCategory === category.value && "bg-primary/10 text-primary hover:bg-primary/20"
-                                )}
-                                onClick={() => setSelectedCategory(category.value)}
-                            >
-                                {category.icon}
-                                <span>{category.title}</span>
-                            </Button>
-                        ))}
+                {isMobile ? (
+                    <div className="flex flex-col">
+                        <div className="flex flex-row overflow-x-auto pb-4">
+                            {settingsCategories.map((category) => (
+                                <Button
+                                    key={category.value}
+                                     variant="ghost"
+                                     className={cn(
+                                         "flex-shrink-0 w-[120px] justify-start gap-3 px-2 mt-0 h-10 rounded-lg m-1",
+                                         selectedCategory === category.value && "bg-primary/10 text-primary hover:bg-primary/20"
+                                     )}
+                                     onClick={() => setSelectedCategory(category.value)}
+                                >
+                                    {category.icon}
+                                    <span>{category.title}</span>
+                                </Button>
+                            ))}
+                        </div>
+                        <div className="flex-1 p-4">
+                            {categoryContent}
+                        </div>
                     </div>
-                    <div className="flex-1 p-4">
-                        {categoryContent}
+                ) : (
+                    <div className="flex h-[400px]">
+                        <div className="w-[200px] border-r flex flex-col pr-6">
+                            {settingsCategories.map((category) => (
+                                <Button
+                                    key={category.value}
+                                    variant="ghost"
+                                    className={cn(
+                                        "w-full justify-start gap-3 px-2 mt-0 h-10 rounded-lg",
+                                        selectedCategory === category.value && "bg-primary/10 text-primary hover:bg-primary/20"
+                                    )}
+                                    onClick={() => setSelectedCategory(category.value)}
+                                >
+                                    {category.icon}
+                                    <span>{category.title}</span>
+                                </Button>
+                            ))}
+                        </div>
+                        <div className="flex-1 p-4">
+                            {categoryContent}
+                        </div>
                     </div>
-                </div>
+                )}
                 <div className="border-t pt-4 mt-4 flex items-center justify-between">
                     <div className="text-xs text-muted-foreground">
                         ChatLuna Preset Editor v0.0.1 by ChatLuna
                         <br />
                         <a className='text-primary' target="_blink" href='https://github.com/ChatLunaLab/preset-editor'>Open Source Address Here</a>
-                        
                     </div>
                 </div>
             </DialogContent>
