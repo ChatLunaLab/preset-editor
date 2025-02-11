@@ -2,6 +2,7 @@
 
 import {
     CharacterPresetTemplate,
+    isCharacterPresetTemplate,
     isRawPreset,
     RawPreset,
 } from "@/types/preset";
@@ -118,6 +119,15 @@ export async function importPreset(preset: string) {
             type: "main",
             preset: rawPreset,
         });
+    }
+
+    if (isCharacterPresetTemplate(rawPreset)) {
+        rawPreset = rawPreset as CharacterPresetTemplate;
+        return await createPreset({
+            name: rawPreset.name,
+            type: "character",
+            preset: rawPreset,
+        }); 
     }
 
     throw new Error("Invalid preset");

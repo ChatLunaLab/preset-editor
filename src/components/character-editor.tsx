@@ -1,7 +1,7 @@
 "use client";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CharacterBasicForm } from "./character-basic-form";
+import { CharacterMainBasic } from "./character-main-basic";
 import { CharacterWorldLore } from "./character-world-lore";
 import { CharacterMessagesForm } from "./character-messages";
 import { CharacterAuthorNote } from "./character-author-note";
@@ -13,25 +13,27 @@ import {
     PresetModel,
     updatePreset as updatePresetToLocal,
 } from "@/hooks/use-preset";
-import { RawPreset } from "@/types/preset";
+import { CharacterPresetTemplate, RawPreset } from "@/types/preset";
 import { GetNestedType, NestedKeyOf } from "@/types/util";
 import { cn, updateNestedObject } from "@/lib/utils";
 import { Button } from "./ui/button";
 import { Download } from "lucide-react";
+import { CharacterBasic } from "./character-basic";
 
 interface CharacterEditorProps {
     presetId: string;
 }
 
 export function CharacterEditor({ presetId }: CharacterEditorProps) {
-    const [activeTab, setActiveTab] = useState("basic");
-
     const preset = usePreset(presetId);
+
+    const [activeTab, setActiveTab] = useState("basic");
 
     if (!preset) {
         // TODO: 404
         return <div>Preset not found</div>;
     }
+
 
     const tabVariants = {
         hidden: { opacity: 0, x: -20 },
@@ -56,10 +58,10 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                         className="w-full bg-background"
                         onValueChange={setActiveTab}
                     >
-                        <TabsList className="h-10 ">
+                        <TabsList className="h-10">
                             {preset.type === "main"
-                                ? mainPresetTabs()
-                                : characterPresetTabs()}
+                                ? <MainPresetTabs />
+                                : <CharacterPresetTabs />}
                         </TabsList>
                     </Tabs>
                     <Button
@@ -89,8 +91,8 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                             variants={tabVariants}
                             transition={{ duration: 0.2 }}
                         >
-                            {activeTab === "basic" && (
-                                <CharacterBasicForm
+                            {(activeTab === "basic" && preset.type === 'main') && (
+                                <CharacterMainBasic
                                     updatePreset={(key, value) =>
                                         updatePreset<RawPreset>(
                                             key,
@@ -137,6 +139,19 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                                     preset={preset.preset as RawPreset}
                                 />
                             )}
+
+                            {(activeTab === "basic" && preset.type === 'character') && (
+                                <CharacterBasic
+                                    updatePreset={(key, value) =>
+                                        updatePreset<CharacterPresetTemplate>(
+                                            key,
+                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                            value as any
+                                        )
+                                    }
+                                    preset={preset.preset as CharacterPresetTemplate}
+                                />
+                            )}
                         </motion.div>
                     </AnimatePresence>
                 </div>
@@ -145,120 +160,69 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
     );
 }
 
-const tabTriggerVariants = {
-    hidden: { opacity: 0, scale: 0.8 },
-    visible: { opacity: 1, scale: 1 },
-    exit: { opacity: 0, scale: 0.8 },
-};
 
-function mainPresetTabs() {
+
+function MainPresetTabs() {
     return (
         <>
-            <motion.div
-                variants={tabTriggerVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                transition={{ duration: 0.2 }}
+
+            <TabsTrigger
+                value="basic"
+                className="px-3 py-1.5 text-sm font-medium transition-all"
             >
-                <TabsTrigger
-                    value="basic"
-                    className="px-3 py-1.5 text-sm font-medium transition-all"
-                >
-                    基本配置
-                </TabsTrigger>
-            </motion.div>
-            <motion.div
-                variants={tabTriggerVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                transition={{ duration: 0.2 }}
+                基本配置
+            </TabsTrigger>
+
+            <TabsTrigger
+                value="messages"
+                className="px-3 py-1.5 text-sm font-medium transition-all"
             >
-                <TabsTrigger
-                    value="messages"
-                    className="px-3 py-1.5 text-sm font-medium transition-all"
-                >
-                    角色提示词
-                </TabsTrigger>
-            </motion.div>
-            <motion.div
-                variants={tabTriggerVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                transition={{ duration: 0.2 }}
+                角色提示词
+            </TabsTrigger>
+
+            <TabsTrigger
+                value="world_books"
+                className="px-3 py-1.5 text-sm font-medium transition-all"
             >
-                <TabsTrigger
-                    value="world_books"
-                    className="px-3 py-1.5 text-sm font-medium transition-all"
-                >
-                    世界书
-                </TabsTrigger>
-            </motion.div>
-            <motion.div
-                variants={tabTriggerVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                transition={{ duration: 0.2 }}
+                世界书
+            </TabsTrigger>
+
+            <TabsTrigger
+                value="author_note"
+                className="px-3 py-1.5 text-sm font-medium transition-all"
             >
-                <TabsTrigger
-                    value="author_note"
-                    className="px-3 py-1.5 text-sm font-medium transition-all"
-                >
-                    作者注释
-                </TabsTrigger>
-            </motion.div>
+                作者注释
+            </TabsTrigger>
+
         </>
     );
 }
 
-function characterPresetTabs() {
+function CharacterPresetTabs() {
     return (
         <>
-            <motion.div
-                variants={tabTriggerVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                transition={{ duration: 0.2 }}
+
+            <TabsTrigger
+                value="basic"
+                className="px-3 py-1.5 text-sm font-medium transition-all"
             >
-                <TabsTrigger
-                    value="basic_character"
-                    className="px-3 py-1.5 text-sm font-medium transition-all"
-                >
-                    基本配置
-                </TabsTrigger>
-            </motion.div>
-            <motion.div
-                variants={tabTriggerVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                transition={{ duration: 0.2 }}
+                基本配置
+            </TabsTrigger>
+
+            <TabsTrigger
+                value="system"
+                className="px-3 py-1.5 text-sm font-medium transition-all"
             >
-                <TabsTrigger
-                    value="system_character"
-                    className="px-3 py-1.5 text-sm font-medium transition-all"
-                >
-                    系统消息
-                </TabsTrigger>
-            </motion.div>
-            <motion.div
-                variants={tabTriggerVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                transition={{ duration: 0.2 }}
+                系统提示词
+            </TabsTrigger>
+
+            <TabsTrigger
+                value="input"
+                className="px-3 py-1.5 text-sm font-medium transition-all"
             >
-                <TabsTrigger
-                    value="input_character"
-                    className="px-3 py-1.5 text-sm font-medium transition-all"
-                >
-                    输入消息
-                </TabsTrigger>
-            </motion.div>
+                输入提示词
+            </TabsTrigger>
+
         </>
     );
 }

@@ -1,4 +1,3 @@
-"use client";
 export interface RawPreset {
     keywords: string[];
     prompts: BaseMessage[];

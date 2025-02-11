@@ -46,7 +46,7 @@ export function CharacterMessagesForm({
         <div className="grid gap-6 sm:grid-cols-1">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between p-6">
-                    <CardTitle>消息列表</CardTitle>
+                    <CardTitle>提示词列表</CardTitle>
                     <div className="space-x-2">
                         <Button
                             variant="ghost"
@@ -117,7 +117,7 @@ export function CharacterMessagesForm({
                                     )}
                                 >
                                     <div className={`space-y-2 ${isMobile ? 'w-full' : ''}`}>
-                                        <Label>消息类型</Label>
+                                        <Label>提示词类型</Label>
                                         <Select
                                             value={message.role}
                                             onValueChange={(value) => {
@@ -145,7 +145,7 @@ export function CharacterMessagesForm({
                                         </Select>
                                     </div>
                                     <div className="space-y-2 flex-grow w-full">
-                                        <Label>消息内容</Label>
+                                        <Label>提示词内容</Label>
                                         <Textarea
                                             className="mt-4 min-h-[60px]"
                                             rows={isMobile ? 30 : 5}

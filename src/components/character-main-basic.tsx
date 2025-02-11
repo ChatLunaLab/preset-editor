@@ -18,7 +18,7 @@ interface CharacterBasicFormProps {
     preset: RawPreset;
 }
 
-export function CharacterBasicForm({
+export function CharacterMainBasic({
     updatePreset,
     preset,
 }: CharacterBasicFormProps) {
@@ -71,11 +71,11 @@ export function CharacterBasicForm({
                                     <Input
                                         id="name"
                                         type="string"
-                                        value={preset.keywords.join(",")}
+                                        value={preset.keywords.join(", ")}
                                         placeholder="预设名称"
                                         onChange={(e) => {
                                             const keywords =
-                                                e.target.value.split(",");
+                                                e.target.value.split(",").map(s => s.trim())
                                             updatePreset?.(
                                                 "keywords",
                                                 keywords
@@ -108,6 +108,7 @@ export function CharacterBasicForm({
                                     id="description"
                                     placeholder="用户的格式化输入"
                                     className="min-h-[100px] rounded-lg"
+                                    rows={5}
                                     value={preset.format_user_prompt}
                                     onChange={(e) =>
                                         updatePreset?.(
@@ -274,6 +275,7 @@ export function CharacterBasicForm({
                                     知识库检索预设
                                 </Label>
                                 <Textarea
+                                    rows={5}
                                     id="description"
                                     placeholder="知识库的预设"
                                     className="min-h-[100px] rounded-lg"
@@ -323,9 +325,10 @@ export function CharacterBasicForm({
                                     <Label htmlFor="long_memory_prompt">
                                         长期记忆检索 Prompt
                                     </Label>
-                                    <Input
+                                    <Textarea
                                         id="long_memory_prompt"
-                                        type="string"
+
+                                        rows={5}
                                         className="rounded-lg"
                                         value={preset.config?.longMemoryPrompt}
                                         onChange={(e) =>
@@ -340,9 +343,10 @@ export function CharacterBasicForm({
                                     <Label htmlFor="height">
                                         长期记忆新问题 Prompt
                                     </Label>
-                                    <Input
+                                    <Textarea
                                         id="height"
-                                        type="string"
+
+                                        rows={5}
                                         className="rounded-lg"
                                         value={
                                             preset.config
@@ -360,9 +364,10 @@ export function CharacterBasicForm({
                                     <Label htmlFor="long_term_memory_extraction_prompt">
                                         长期记忆提取 Prompt
                                     </Label>
-                                    <Input
+                                    <Textarea
                                         id="long_term_memory_extraction_prompt"
-                                        type="string"
+
+                                        rows={5}
                                         value={
                                             preset.config
                                                 ?.longMemoryExtractPrompt
@@ -383,6 +388,7 @@ export function CharacterBasicForm({
                                 </Label>
                                 <Textarea
                                     id="appearance"
+                                    rows={5}
                                     placeholder="世界书检索 Prompt"
                                     value={preset.config?.loreBooksPrompt}
                                     className="min-h-[100px] rounded-lg"

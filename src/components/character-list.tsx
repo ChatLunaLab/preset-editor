@@ -106,18 +106,16 @@ export function CharacterList({
                             <Button
                                 variant="ghost"
                                 onClick={() => sortCharacters("name")}
-                                className={`hover:bg-transparent transition-all ${
-                                    sortKey === "name" ? "text-primary" : ""
-                                }`}
+                                className={`hover:bg-transparent transition-all ${sortKey === "name" ? "text-primary" : ""
+                                    }`}
                             >
                                 名称
                                 {sortKey === "name" ? (
                                     <ArrowUp
-                                        className={`ml-2 h-4 w-4 transition-transform duration-200  ${
-                                            sortOrder === "asc"
+                                        className={`ml-2 h-4 w-4 transition-transform duration-200  ${sortOrder === "asc"
                                                 ? ""
                                                 : "rotate-180"
-                                        }`}
+                                            }`}
                                     />
                                 ) : (
                                     <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -128,18 +126,16 @@ export function CharacterList({
                             <Button
                                 variant="ghost"
                                 onClick={() => sortCharacters("type")}
-                                className={`hover:bg-transparent transition-all ${
-                                    sortKey === "type" ? "text-primary" : ""
-                                }`}
+                                className={`hover:bg-transparent transition-all ${sortKey === "type" ? "text-primary" : ""
+                                    }`}
                             >
                                 类型
                                 {sortKey === "type" ? (
                                     <ArrowUp
-                                        className={`ml-2 h-4 w-4 transition-transform duration-200  ${
-                                            sortOrder === "asc"
+                                        className={`ml-2 h-4 w-4 transition-transform duration-200  ${sortOrder === "asc"
                                                 ? ""
                                                 : "rotate-180"
-                                        }`}
+                                            }`}
                                     />
                                 ) : (
                                     <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -150,20 +146,18 @@ export function CharacterList({
                             <Button
                                 variant="ghost"
                                 onClick={() => sortCharacters("lastModified")}
-                                className={`hover:bg-transparent transition-all ${
-                                    sortKey === "lastModified"
+                                className={`hover:bg-transparent transition-all ${sortKey === "lastModified"
                                         ? "text-primary"
                                         : ""
-                                }`}
+                                    }`}
                             >
                                 最后修改
                                 {sortKey === "lastModified" ? (
                                     <ArrowUp
-                                        className={`ml-2 h-4 w-4 transition-transform duration-200  ${
-                                            sortOrder === "asc"
+                                        className={`ml-2 h-4 w-4 transition-transform duration-200  ${sortOrder === "asc"
                                                 ? ""
                                                 : "rotate-180"
-                                        }`}
+                                            }`}
                                     />
                                 ) : (
                                     <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -185,7 +179,7 @@ export function CharacterList({
                                 </Link>
                             </TableCell>
                             <TableCell className="table-cell">
-                                <span className="ml-4">{character.type}</span>
+                                <span className="ml-4">{character.type === "main" ? "主插件预设" : "伪装预设"}</span>
                             </TableCell>
                             <TableCell className="table-cell ml-4">
                                 <span className="ml-4">

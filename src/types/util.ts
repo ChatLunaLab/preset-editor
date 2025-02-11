@@ -5,6 +5,7 @@ export type NestedKeyOf<T, MaxDepth extends number = 7> = [MaxDepth] extends [ne
   ? never
   : T extends Primitive
   ? never
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   : T extends any // 分发联合类型
   ? T extends Array<infer U>
     ?
@@ -15,6 +16,7 @@ export type NestedKeyOf<T, MaxDepth extends number = 7> = [MaxDepth] extends [ne
     : T extends object
     ? {
         [K in keyof T]: K extends string
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
           ? T[K] extends Function
             ? never
             : Exclude<T[K], undefined> extends Primitive
@@ -41,6 +43,7 @@ export type NestedKeyOf<T, MaxDepth extends number = 7> = [MaxDepth] extends [ne
   : never;
 
 export type GetNestedType<T, Path> = Path extends `${infer Head}.${infer Tail}`
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ? T extends any // 分发联合类型
     ? T extends Array<infer A>
       ? Head extends `${number}`

@@ -76,6 +76,7 @@ export function CharacterAuthorNote({
                                     id="description"
                                     placeholder="注释的内容"
                                     className="min-h-[100px] rounded-lg"
+                                    rows={5}
                                     value={preset.authors_note?.content || ""}
                                     onChange={(e) =>
                                         updatePreset?.(
