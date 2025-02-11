@@ -1,38 +1,27 @@
-import { StrictMode, lazy, Suspense } from "react";
+import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 
 import { ThemeProvider } from "@/components/ui/theme";
 import { createHashRouter, RouterProvider } from "react-router-dom";
+import Page from "./pages/app";
+import SquarePage from "./pages/square/page";
+import CharacterEditPage from "./pages/character/page";
 
-const CharacterEditPage = lazy(() => import("./pages/character/page.tsx"));
-const SquarePage = lazy(() => import("./pages/square/page.tsx"));
-const Page = lazy(() => import("./pages/app.tsx"));
+
 
 const router = createHashRouter([
     {
         path: "/",
-        element: (
-            <Suspense fallback={<div>Loading...</div>}>
-                <Page />
-            </Suspense>
-        ),
+        element: <Page />,
     },
     {
         path: "/square",
-        element: (
-            <Suspense fallback={<div>Loading...</div>}>
-                <SquarePage />
-            </Suspense>
-        ),
+        element: <SquarePage />,
     },
     {
         path: "/character/:id",
-        element: (
-            <Suspense fallback={<div>Loading...</div>}>
-                <CharacterEditPage />
-            </Suspense>
-        ),
+        element: <CharacterEditPage />,
     },
 ]);
 
