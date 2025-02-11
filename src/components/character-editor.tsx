@@ -6,7 +6,7 @@ import { CharacterWorldLore } from "./character-world-lore";
 import { CharacterMessagesForm } from "./character-messages";
 import { CharacterAuthorNote } from "./character-author-note";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useState, useRef, useEffect, createRef } from "react";
 import {
     exportPreset,
     usePreset,
@@ -30,6 +30,14 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
     const preset = usePreset(presetId);
 
     const [activeTab, setActiveTab] = useState("basic");
+    const tabRefs = useRef<Record<string, React.RefObject<HTMLButtonElement>>>({
+        basic: createRef<HTMLButtonElement>(),
+        messages: createRef<HTMLButtonElement>(),
+        world_books: createRef<HTMLButtonElement>(),
+        author_note: createRef<HTMLButtonElement>(),
+        system: createRef<HTMLButtonElement>(),
+        input: createRef<HTMLButtonElement>(),
+    })
 
     if (!preset) {
         // TODO: 404
@@ -60,12 +68,14 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                         className="w-full bg-background"
                         onValueChange={setActiveTab}
                     >
-                        <TabsList className="h-10">
+                        <TabsList className="h-10 relative pb-2">
                             {preset.type === "main"
-                                ? <MainPresetTabs />
-                                : <CharacterPresetTabs />}
+                                ? <MainPresetTabs tabRefs={tabRefs.current} />
+                                : <CharacterPresetTabs tabRefs={tabRefs.current} />}
+                            <ActiveTabIndicator activeTab={activeTab} tabRefs={tabRefs.current} />
                         </TabsList>
                     </Tabs>
+
                     <Button
                         variant="ghost"
                         size="icon"
@@ -105,7 +115,7 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                                     preset={preset.preset as RawPreset}
                                 />
                             )}
-                            {activeTab === "messages" && (
+                            {(activeTab === "messages" && preset.type === 'main') && (
                                 <CharacterMessagesForm
                                     updatePreset={(key, value) =>
                                         updatePreset<RawPreset>(
@@ -117,7 +127,7 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                                     preset={preset.preset as RawPreset}
                                 />
                             )}
-                            {activeTab === "world_books" && (
+                            {(activeTab === "world_books" && preset.type === 'main') && (
                                 <CharacterWorldLore
                                     updatePreset={(key, value) =>
                                         updatePreset<RawPreset>(
@@ -129,7 +139,7 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                                     preset={preset.preset as RawPreset}
                                 />
                             )}
-                            {activeTab === "author_note" && (
+                            {(activeTab === "author_note" && preset.type === 'main') && (
                                 <CharacterAuthorNote
                                     updatePreset={(key, value) =>
                                         updatePreset<RawPreset>(
@@ -155,7 +165,7 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                                 />
                             )}
 
-                            {activeTab === "system" && (
+                            {(activeTab === "system" && preset.type === 'character') && (
                                 <CharacterSystem
                                     updatePreset={(key, value) =>
                                         updatePreset<CharacterPresetTemplate>(
@@ -168,7 +178,7 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                                 />
                             )}
 
-                            {activeTab === "input" && (
+                            {(activeTab === "input" && preset.type === 'character' ) && (
                                 <CharacterInput
                                     updatePreset={(key, value) =>
                                         updatePreset<CharacterPresetTemplate>(
@@ -195,7 +205,7 @@ const tabTriggerVariants = {
 };
 
 
-function MainPresetTabs() {
+function MainPresetTabs({ tabRefs }: { tabRefs: Record<string, React.RefObject<HTMLButtonElement>> }) {
     return (
         <>
             <motion.div
@@ -205,10 +215,11 @@ function MainPresetTabs() {
                 exit="exit"
                 transition={{ duration: 0.2 }}
             >
-
+               
                 <TabsTrigger
                     value="basic"
-                className="px-3 py-1.5 text-sm font-medium transition-all"
+                    className="relative px-3 py-1.5 text-sm font-medium transition-all z-10 data-[state=active]:bg-[transparent]"
+                    ref={tabRefs.basic}
                 >
                     基本配置
                 </TabsTrigger>
@@ -222,7 +233,8 @@ function MainPresetTabs() {
             >
                 <TabsTrigger
                     value="messages"
-                className="px-3 py-1.5 text-sm font-medium transition-all"
+                    className="relative px-3 py-1.5 text-sm font-medium transition-all z-10 data-[state=active]:bg-[transparent]"
+                    ref={tabRefs.messages}
                 >
                     角色提示词
                 </TabsTrigger>
@@ -236,7 +248,8 @@ function MainPresetTabs() {
             >
                 <TabsTrigger
                     value="world_books"
-                className="px-3 py-1.5 text-sm font-medium transition-all"
+                    className="relative px-3 py-1.5 text-sm font-medium transition-all z-10 data-[state=active]:bg-[transparent]"
+                    ref={tabRefs.world_books}
                 >
                     世界书
                 </TabsTrigger>
@@ -250,7 +263,8 @@ function MainPresetTabs() {
             >
                 <TabsTrigger
                     value="author_note"
-                className="px-3 py-1.5 text-sm font-medium transition-all"
+                    className="relative px-3 py-1.5 text-sm font-medium transition-all z-10 data-[state=active]:bg-[transparent]"
+                    ref={tabRefs.author_note}
                 >
                     作者注释
                 </TabsTrigger>
@@ -259,7 +273,7 @@ function MainPresetTabs() {
     );
 }
 
-function CharacterPresetTabs() {
+function CharacterPresetTabs({ tabRefs }: { tabRefs: Record<string, React.RefObject<HTMLButtonElement>> }) {
     return (
         <>
             <motion.div
@@ -271,7 +285,9 @@ function CharacterPresetTabs() {
             >
                 <TabsTrigger
                     value="basic"
-                className="px-3 py-1.5 text-sm font-medium transition-all"
+                    className="relative px-3 py-1.5 text-sm font-medium transition-all z-10 data-[state=active]:bg-[transparent]"
+               
+                    ref={tabRefs.basic}
                 >
                     基本配置
                 </TabsTrigger>
@@ -285,8 +301,9 @@ function CharacterPresetTabs() {
                 transition={{ duration: 0.2 }}
             >
                 <TabsTrigger
-                value="system"
-                className="px-3 py-1.5 text-sm font-medium transition-all"
+                className="relative px-3 py-1.5 text-sm font-medium transition-all z-10 data-[state=active]:bg-[transparent]"
+                ref={tabRefs.system}
+                    value="system"
                 >
                     系统提示词
                 </TabsTrigger>
@@ -301,7 +318,8 @@ function CharacterPresetTabs() {
             >
                 <TabsTrigger
                     value="input"
-                className="px-3 py-1.5 text-sm font-medium transition-all"
+                    className="relative px-3 py-1.5 text-sm font-medium transition-all z-10 data-[state=active]:bg-[transparent]"
+                    ref={tabRefs.input}
                 >
                     格式化输入提示词
                 </TabsTrigger>
@@ -310,3 +328,42 @@ function CharacterPresetTabs() {
         </>
     );
 }
+
+
+interface ActiveTabIndicatorProps {
+    activeTab: string;
+    tabRefs: Record<string, React.RefObject<HTMLButtonElement>>;
+}
+
+const ActiveTabIndicator: React.FC<ActiveTabIndicatorProps> = ({ activeTab, tabRefs }) => {
+    const [indicatorWidth, setIndicatorWidth] = useState(0);
+    const [indicatorLeft, setIndicatorLeft] = useState(0);
+
+    useEffect(() => {
+        const updateIndicator = () => {
+            const currentTabRef = tabRefs[activeTab as keyof typeof tabRefs];
+            if (currentTabRef && currentTabRef.current) {
+                setIndicatorWidth(currentTabRef.current.offsetWidth);
+                setIndicatorLeft(currentTabRef.current.offsetLeft);
+            }
+        };
+
+        updateIndicator();
+        window.addEventListener("resize", updateIndicator);
+
+        return () => {
+            window.removeEventListener("resize", updateIndicator);
+        };
+    }, [activeTab, tabRefs]);
+
+    return (
+        <motion.div
+            className="absolute top-[4px] left-0 h-8 bg-background rounded-(--radius) transition-all duration-300 z-1"
+            style={{
+                left: indicatorLeft,
+                width: indicatorWidth,
+            }}
+            layout
+        />
+    );
+};
