@@ -52,14 +52,16 @@ const PaginationLink = React.forwardRef<HTMLAnchorElement, PaginationLinkProps>(
     asChild ? (
       React.cloneElement(children as React.ReactElement, {
         ...props,
-        className: cn(
-          buttonVariants({
-            variant: isActive ? "outline" : "ghost",
-            size,
-          }),
-          className,
-          ((children as React.ReactElement<ButtonProps>)?.props as ButtonProps)?.className
-        ),
+        ...{
+          className: cn(
+            buttonVariants({
+              variant: isActive ? "outline" : "ghost",
+              size,
+            }),
+            className,
+            ((children as React.ReactElement<ButtonProps>)?.props as ButtonProps)?.className
+          )
+        },
         ...props,
       })
     ) : (
