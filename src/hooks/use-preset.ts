@@ -238,19 +238,19 @@ export async function createCharacterPreset(name: string) {
              3. 如不需要回复，返回空内容的消息
          }}
      }}`,
-     status: `好感度: '10',
+            status: `好感度: '10',
        心情: "开心",
        状态: "正在和群友探讨人生"
        记忆: "dingyi: 好厉害的群友，懂得那么多哲学道理"
-       动作: "拿起手机聊天"`
+       动作: "拿起手机聊天"`,
         },
-    }); 
+    });
 }
 
-export async function updatePreset(id: string, preset: PresetModel["preset"]) {
+export async function updatePreset(id: string, preset: PresetModel) {
     return await db.presets.update(id, {
+        ...preset,
         lastModified: Date.now(),
-        preset,
     });
 }
 
@@ -306,7 +306,7 @@ export async function importPreset(preset: string) {
             name: rawPreset.name,
             type: "character",
             preset: rawPreset,
-        }); 
+        });
     }
 
     throw new Error("Invalid preset");

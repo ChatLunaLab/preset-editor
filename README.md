@@ -6,12 +6,13 @@
 
 - [x] 预设编辑器
 - [x] 预设管理
-- [ ] 伪装预设编辑器
+- [x] 伪装预设编辑器
 - [ ] 预设广场
 
 ## Usage
 
 前往 [https://preset.chatluna.chat](https://preset.chatluna.chat) 体验。
+
 
 ## LICENSE
 

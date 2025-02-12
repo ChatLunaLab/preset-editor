@@ -61,7 +61,7 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
         } else {
             preset.name = (preset.preset as CharacterPresetTemplate).name;
         }
-        await updatePresetToLocal(preset.id, preset.preset);
+        await updatePresetToLocal(preset.id, preset);
     };
 
     return (

@@ -265,9 +265,9 @@ export function SettingsDialog() {
                 )}
                 <div className="border-t pt-4 mt-4 flex items-center justify-between">
                     <div className="text-xs text-muted-foreground">
-                        ChatLuna Preset Editor v0.0.1 by ChatLuna
+                        ChatLuna Preset Editor v0.1.0 by dingyi
                         <br />
-                        <a className='text-primary' target="_blink" href='https://github.com/ChatLunaLab/preset-editor'>Open Source Address Here</a>
+                        <a className='text-primary' target="_blink" href='https://github.com/ChatLunaLab/preset-editor'>Open Source Address</a>
                     </div>
                 </div>
             </DialogContent>

@@ -3,7 +3,6 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import {
-    PenToolIcon as Tool,
     Users,
     FolderOpen,
     Menu,
@@ -46,7 +45,6 @@ export function MainLayout({ children }: MainLayoutProps) {
                                 <NavItem
                                     key={preset.id}
                                     href={`/character/${preset.id}`}
-                                    icon={Tool}
                                     label={preset.name}
                                 />
                             ))}
@@ -100,7 +98,7 @@ export function MainLayout({ children }: MainLayoutProps) {
 }
 
 interface NavItemProps {
-    icon: React.ComponentType<{ className?: string }>;
+    icon?: React.ComponentType<{ className?: string }>;
     label: string;
     href: string;
 }
@@ -119,7 +117,7 @@ function NavItem({ icon: Icon, label, href }: NavItemProps) {
                     isActive && "bg-primary/10 text-primary hover:bg-primary/20"
                 )}
             >
-                <Icon className="h-5 w-5" />
+                {Icon && <Icon className="h-5 w-5" />}
                 <span>{label}</span>
             </Button>
         </Link>
