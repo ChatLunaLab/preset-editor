@@ -155,7 +155,7 @@ export async function downloadPreset(preset: SquarePresetData) {
 
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = preset.name + ".yaml";
+    a.download = preset.name + ".yml";
     a.click();
 
     document.body.removeChild(a);
