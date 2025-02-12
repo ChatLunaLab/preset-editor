@@ -50,7 +50,9 @@ const Textarea = React.forwardRef<
     }, [history, historyIndex]);
 
     useEffect(() => {
-        history.push(typeof props.value === "string" ? props.value : "");
+        // Clear the stack when the value changes
+        history.length = 0
+        history.push(typeof props.value === 'string' ? props.value : '');
         setHistoryIndex(history.length - 1);
     }, [props.value]);
 
