@@ -4,7 +4,7 @@ import { RawPreset } from "@/types/preset";
 
 import { GetNestedType, NestedKeyOf } from "@/types/util";
 import { Button } from "./ui/button";
-import { ChevronDown, Plus } from "lucide-react";
+import { ChevronDown, Plus, Trash } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -155,13 +155,25 @@ export function CharacterMessagesForm({
                                                     `prompts.${index}.content`,
                                                     e.target.value
                                                 );
-                                            }}
+                                             }}
                                         />
                                     </div>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                         className="size-10 p-0 h-8"
+                                         onClick={() => {
+                                             const prompts = [...preset.prompts];
+                                             prompts.splice(index, 1);
+                                             updatePreset?.("prompts", prompts);
+                                         }}
+                                     >
+                                         <Trash className="h-4 w-4"/>
+                                    </Button>
                                 </div>
                             ))}
                         </CardContent>
-                    </div>
+                    </div >
                 </div>
             </Card>
         </div>
