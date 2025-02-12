@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { ChevronDown } from "lucide-react";
 import { Skeleton } from './ui/skeleton';
+import { PresetPreviewDialog } from "./preset-preview-dialog";
 
 interface PresetDetailsProps {
   squarePreset: SquarePresetData
@@ -23,6 +24,7 @@ interface PresetDetailsProps {
 
 export function PresetDetails({ squarePreset }: PresetDetailsProps) {
   const navigate = useNavigate();
+  const [open, setOpen] = React.useState(false);
 
   const preset = useSquarePresetForNetwork(squarePreset)
 
@@ -45,7 +47,7 @@ export function PresetDetails({ squarePreset }: PresetDetailsProps) {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
             <Eye className="h-4 w-4 mr-2" />
             预览
           </Button>
@@ -66,6 +68,8 @@ export function PresetDetails({ squarePreset }: PresetDetailsProps) {
       {preset && isRawPreset(preset) && MainPresetDetails(preset)}
 
       {preset && isCharacterPresetTemplate(preset) && CharacterPresetDetails(preset)}
+
+      <PresetPreviewDialog open={open} key={squarePreset.sha1} onOpenChange={setOpen} preset={preset} />
     </div>
   )
 }

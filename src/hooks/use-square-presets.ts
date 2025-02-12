@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 async function fetchPresets() {
     try {
         if (globalThis.cachePresets) {
-            return [...globalThis.cachePresets] as SquarePresetData[];
+            return globalThis.cachePresets as SquarePresetData[];
         }
         const response = await fetch(
             "https://gcore.jsdelivr.net/gh/chatlunalab/awesome-chatluna-presets@preset/presets.json"

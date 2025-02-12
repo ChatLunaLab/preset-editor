@@ -7,7 +7,7 @@ export type ThemeContextType = {
     resolvedTheme: "light" | "dark";
 };
 
-export   const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+export const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function useTheme() {
     const context = useContext(ThemeContext);
