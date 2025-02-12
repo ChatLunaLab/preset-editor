@@ -4,8 +4,8 @@ import TextareaAutosize, { TextareaAutosizeProps } from 'react-textarea-autosize
 import { useState, useRef, useCallback, useEffect } from "react";
 
 const Textarea = React.forwardRef<
-  HTMLTextAreaElement,
-  TextareaAutosizeProps
+    HTMLTextAreaElement,
+    TextareaAutosizeProps
 >(({ className, ...props }, ref) => {
     const [history, setHistory] = useState<string[]>([""]);
     const [historyIndex, setHistoryIndex] = useState<number>(0);
@@ -48,6 +48,11 @@ const Textarea = React.forwardRef<
             }
         }
     }, [history, historyIndex]);
+
+    useEffect(() => {
+        history.push(typeof props.value === "string" ? props.value : "");
+        setHistoryIndex(history.length - 1);
+    }, [props.value]);
 
     return (
         <TextareaAutosize

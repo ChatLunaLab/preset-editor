@@ -76,7 +76,7 @@ export function PresetPreviewDialog({ preset, open, onOpenChange }: PresetPrevie
 
     initialize();
 
-  }, [open, editorContainerRef, presetYaml]);
+  }, [open, editorContainerRef, presetYaml, theme.resolvedTheme]);
 
   // 更新编辑器内容
   useEffect(() => {
