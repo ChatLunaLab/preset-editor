@@ -71,19 +71,18 @@ export function useSquarePreset(id: string) {
             | SquarePresetData[]
             | undefined;
 
-        if (!cachePresets) {
-            fetchPresets().then((presets) => {
-                const preset = presets.find((preset) => preset.sha1 === id);
+        if (cachePresets) {
+            const preset = cachePresets.find((preset) => preset.sha1 === id);
 
-                setPreset(preset);
-            });
+            setPreset(preset);
 
             return;
         }
+        fetchPresets().then((presets) => {
+            const preset = presets.find((preset) => preset.sha1 === id);
 
-        const preset = cachePresets.find((preset) => preset.sha1 === id);
-
-        setPreset(preset);
+            setPreset(preset);
+        });
     }, [id]);
 
     return preset;
@@ -103,7 +102,7 @@ export function useSquarePresetForNetwork(squarePreset: SquarePresetData) {
         ).then((preset) => {
             setPreset(preset);
         });
-    });
+    }, [squarePreset]);
 
     return preset;
 }

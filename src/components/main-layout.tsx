@@ -14,7 +14,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SettingsDialog } from "./settings-dialog";
 import { useRecentPresets } from "@/hooks/use-preset";
 import { Toaster } from "./ui/toaster";
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router';
 
 interface MainLayoutProps {
     children: React.ReactNode;

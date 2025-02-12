@@ -2,7 +2,7 @@ import { MainLayout } from "@/components/main-layout"
 import { PresetDetails } from "@/components/preset-details"
 import { useSquarePreset } from "@/hooks/use-square-presets";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 
 export default function PresetViewPage() {
     const { id } = useParams();

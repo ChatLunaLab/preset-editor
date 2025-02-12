@@ -3,7 +3,7 @@
 import { MainLayout } from "@/components/main-layout";
 import { CharacterEditor } from "@/components/character-editor";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 
 export default function CharacterEditPage() {
     const { id } = useParams();

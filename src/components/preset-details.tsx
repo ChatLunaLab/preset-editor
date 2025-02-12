@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Download, Eye, Pencil } from "lucide-react"
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { downloadPreset, useSquarePresetForNetwork } from "@/hooks/use-square-presets"
 import { SquarePresetData } from "@/types/square"
 import { CharacterPresetTemplate, isCharacterPresetTemplate, isRawPreset, RawPreset } from "@/types/preset"
@@ -28,7 +28,7 @@ export function PresetDetails({ squarePreset }: PresetDetailsProps) {
 
 
   return (
-    <div className="container py-6 px-12">
+    <div className="container py-6 px-6 sm:px-12">
       <div className="mb-4">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="size-2" />
@@ -219,4 +219,3 @@ function DetailItem({ label, value }: DetailItemProps) {
     </div>
   )
 }
-

@@ -33,7 +33,7 @@ import {
     getPreset,
     PresetModel,
 } from "@/hooks/use-preset";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router";
 
 interface CharacterListProps {
     presets: PresetModel[];

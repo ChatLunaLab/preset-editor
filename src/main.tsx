@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 
 import { ThemeProvider } from "@/components/ui/theme";
-import { createHashRouter, RouterProvider } from "react-router-dom";
+import { createHashRouter, RouterProvider } from "react-router";
 import Page from "./pages/app";
 import SquarePage from "./pages/square/page";
 import CharacterEditPage from "./pages/character/page";
