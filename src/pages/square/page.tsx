@@ -115,7 +115,8 @@ export default function SquarePage() {
                                     </div>
                                 </CardHeader>
                                 <CardContent className="space-y-4 flex flex-col flex-grow">
-                                    <p className="text-sm text-muted-foreground line-clamp-4 flex-grow">{preset?.description}</p>
+                                    
+                                    <p className="text-sm text-muted-foreground line-clamp-7 flex-grow">{preset?.description}</p>
                                     <div className="flex flex-wrap gap-2">
                                         {preset.tags.map((tag) => (
                                             <Badge key={tag} variant="outline" className="rounded-sm">

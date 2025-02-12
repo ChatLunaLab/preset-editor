@@ -44,11 +44,13 @@ export async function createPreset<
     T extends "main" | "character" = "main" | "character"
 >(model: Omit<PresetModel<T>, "lastModified" | "id">) {
     const id = crypto.randomUUID();
-    return await db.presets.add({
+     await db.presets.add({
         lastModified: Date.now(),
         ...model,
         id,
     });
+
+    return id;
 }
 
 export async function createMainPreset(name: string) {
@@ -288,8 +290,8 @@ export const exportPreset = (preset: PresetModel) => {
     document.body.removeChild(a);
 };
 
-export async function importPreset(preset: string) {
-    let rawPreset = load(preset) as RawPreset | CharacterPresetTemplate;
+export async function importPreset(preset: string | RawPreset | CharacterPresetTemplate) {
+    let rawPreset = typeof preset === "string" ? load(preset) as RawPreset | CharacterPresetTemplate : preset
 
     if (isRawPreset(rawPreset)) {
         rawPreset = rawPreset as RawPreset;

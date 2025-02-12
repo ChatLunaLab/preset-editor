@@ -16,6 +16,9 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { ChevronDown } from "lucide-react";
 import { Skeleton } from './ui/skeleton';
 import { PresetPreviewDialog } from "./preset-preview-dialog";
+import { Loader2 } from "lucide-react"
+import { importPreset } from '@/hooks/use-preset';
+import { useToast } from '@/hooks/use-toast';
 
 interface PresetDetailsProps {
   squarePreset: SquarePresetData
@@ -25,6 +28,8 @@ interface PresetDetailsProps {
 export function PresetDetails({ squarePreset }: PresetDetailsProps) {
   const navigate = useNavigate();
   const [open, setOpen] = React.useState(false);
+  const [isEditLoading, setIsEditLoading] = React.useState(false);
+  const toaster = useToast()
 
   const preset = useSquarePresetForNetwork(squarePreset)
 
@@ -54,9 +59,19 @@ export function PresetDetails({ squarePreset }: PresetDetailsProps) {
             <Download className="h-4 w-4 mr-2" />
             下载
           </Button>
-          <Button size="sm">
-            <Pencil className="h-4 w-4 mr-2" />
-            编辑
+          <Button size="sm" disabled={isEditLoading} onClick={() => {
+            setIsEditLoading(true);
+            importPreset(preset).then((id) => {
+              setIsEditLoading(false)
+              toaster.toast({
+                title: "导入成功",
+                description: `已成功导入预设: ${squarePreset.name}。可以开始编辑了！`,
+              })
+              navigate(`/character/${id}`);
+            });
+          }}>
+            {isEditLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Pencil className="h-4 w-4 mr-2" />}
+            {isEditLoading ? "导入中" : "编辑"}
           </Button>
         </div>
       </div>
