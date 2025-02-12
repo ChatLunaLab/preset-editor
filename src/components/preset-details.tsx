@@ -36,11 +36,10 @@ export function PresetDetails({ squarePreset }: PresetDetailsProps) {
           <ArrowLeft className="size-2" />
         </Button>
       </div>
-      <div className="flex items-start justify-between gap-6">
-        <div className="space-y-1 flex-1">
+      <div className="flex flex-col sm:flex-row  items-start justify-between gap-6">
+        <div className="space-y-1 flex-1 flex items-center">
           <h1 className="text-2xl font-bold">{squarePreset.keywords?.[0] ?? squarePreset.name}</h1>
-          <div className="mt-4 flex items-center gap-2 text-muted-foreground">
-
+          <div className="flex items-center gap-2 text-muted-foreground ml-3">
             <Badge variant="secondary">
               {squarePreset.type === 'main' ? "主插件预设" : "伪装预设"}
             </Badge>
@@ -65,16 +64,16 @@ export function PresetDetails({ squarePreset }: PresetDetailsProps) {
       <Separator className="my-6" />
 
       {!preset && <Loading />}
-      {preset && isRawPreset(preset) && MainPresetDetails(preset)}
+      {preset && isRawPreset(preset) && MainPresetDetails(preset, squarePreset)}
 
-      {preset && isCharacterPresetTemplate(preset) && CharacterPresetDetails(preset)}
+      {preset && isCharacterPresetTemplate(preset) && CharacterPresetDetails(preset, squarePreset)}
 
       <PresetPreviewDialog open={open} key={squarePreset.sha1} onOpenChange={setOpen} preset={preset} />
     </div>
   )
 }
 
-export function MainPresetDetails(preset: RawPreset) {
+export function MainPresetDetails(preset: RawPreset, squarePresetData: SquarePresetData) {
   return (
     <div className="grid gap-6">
       <Card>
@@ -85,9 +84,24 @@ export function MainPresetDetails(preset: RawPreset) {
           <div className="grid gap-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
               <DetailItem label="名称" value={preset.keywords.join(", ")} />
+              <DetailItem label="更新时间" value={new Date(squarePresetData.modified).toLocaleString()} />
+              <DetailItem label="预设描述（可能由 AI 生成）" value={squarePresetData.description ?? "空"} />
               <DetailItem label="格式化用户输入" value={preset.format_user_prompt ?? "空"} />
             </div>
+
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-muted-foreground">标签</div>
+              <div className="flex flex-wrap gap-2">
+                {squarePresetData.tags.map((tag) => (
+                  <Badge key={tag} variant="outline">
+                    {tag}
+                  </Badge>
+                ))}
+
+              </div>
+            </div>
           </div>
+
         </CardContent>
       </Card>
 
@@ -96,7 +110,7 @@ export function MainPresetDetails(preset: RawPreset) {
   )
 }
 
-export function CharacterPresetDetails(preset: CharacterPresetTemplate) {
+export function CharacterPresetDetails(preset: CharacterPresetTemplate, squarePresetData: SquarePresetData) {
   console.log(preset.input)
   return (
     <div className="grid gap-6">
@@ -108,11 +122,23 @@ export function CharacterPresetDetails(preset: CharacterPresetTemplate) {
           <div className="grid gap-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
               <DetailItem label="名称" value={preset.name} />
+              <DetailItem label="更新时间" value={new Date(squarePresetData.modified).toLocaleString()} />
               <DetailItem label="触发关键词" value={preset.nick_name.join(", ") ?? "空"} />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
               <DetailItem label="禁言关键词" value={preset.mute_keyword.join(", ")} />
               <DetailItem label="状态" value={preset.status} />
+              <DetailItem label="预设描述（可能由 AI 生成）" value={squarePresetData.description ?? "空"} />
+            </div>
+
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-muted-foreground">标签</div>
+              <div className="flex flex-wrap gap-2">
+                {squarePresetData.tags.map((tag) => (
+                  <Badge key={tag} variant="outline">
+                    {tag}
+                  </Badge>
+                ))}
+
+              </div>
             </div>
           </div>
         </CardContent>

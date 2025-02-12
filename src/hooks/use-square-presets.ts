@@ -12,7 +12,7 @@ async function fetchPresets() {
             return globalThis.cachePresets as SquarePresetData[];
         }
         const response = await fetch(
-            "https://gcore.jsdelivr.net/gh/chatlunalab/awesome-chatluna-presets@preset/presets.json"
+            "https://cdn.jsdelivr.net/gh/chatlunalab/awesome-chatluna-presets@preset/presets.json"
         );
         if (!response.ok) {
             throw new Error("Failed to fetch presets");
@@ -65,12 +65,14 @@ export function useSquarePresets(sortOption: string, keywords: string[]) {
             sorted = sorted.filter((preset) => {
                 for (const keyword of keywords) {
                     const keywordLower = keyword.toLowerCase();
+                    const presetType =
+                        preset.type === "main" ? "主插件" : "伪装";
                     if (
                         preset.name.toLowerCase().includes(keywordLower) ||
                         preset.description
                             .toLowerCase()
                             .includes(keywordLower) ||
-                        preset.type.toLowerCase().includes(keywordLower) ||
+                        presetType.includes(keywordLower) ||
                         preset.tags.some((tag) =>
                             tag.toLowerCase().includes(keywordLower)
                         )
