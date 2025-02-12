@@ -56,6 +56,11 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
         value: GetNestedType<PresetModel["preset"], NestedKeyOf<K>>
     ) => {
         preset.preset = updateNestedObject(preset.preset, key, value);
+        if (preset.type === "main") {
+            preset.name = (preset.preset as RawPreset).keywords[0];
+        } else {
+            preset.name = (preset.preset as CharacterPresetTemplate).name;
+        }
         await updatePresetToLocal(preset.id, preset.preset);
     };
 
@@ -178,7 +183,7 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                                 />
                             )}
 
-                            {(activeTab === "input" && preset.type === 'character' ) && (
+                            {(activeTab === "input" && preset.type === 'character') && (
                                 <CharacterInput
                                     updatePreset={(key, value) =>
                                         updatePreset<CharacterPresetTemplate>(
@@ -215,7 +220,7 @@ function MainPresetTabs({ tabRefs }: { tabRefs: Record<string, React.RefObject<H
                 exit="exit"
                 transition={{ duration: 0.2 }}
             >
-               
+
                 <TabsTrigger
                     value="basic"
                     className="relative px-3 py-1.5 text-sm font-medium transition-all z-10 data-[state=active]:bg-[transparent]"
@@ -286,7 +291,7 @@ function CharacterPresetTabs({ tabRefs }: { tabRefs: Record<string, React.RefObj
                 <TabsTrigger
                     value="basic"
                     className="relative px-3 py-1.5 text-sm font-medium transition-all z-10 data-[state=active]:bg-[transparent]"
-               
+
                     ref={tabRefs.basic}
                 >
                     基本配置
@@ -301,8 +306,8 @@ function CharacterPresetTabs({ tabRefs }: { tabRefs: Record<string, React.RefObj
                 transition={{ duration: 0.2 }}
             >
                 <TabsTrigger
-                className="relative px-3 py-1.5 text-sm font-medium transition-all z-10 data-[state=active]:bg-[transparent]"
-                ref={tabRefs.system}
+                    className="relative px-3 py-1.5 text-sm font-medium transition-all z-10 data-[state=active]:bg-[transparent]"
+                    ref={tabRefs.system}
                     value="system"
                 >
                     系统提示词
