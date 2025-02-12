@@ -12,7 +12,7 @@ async function fetchPresets() {
             return globalThis.cachePresets as SquarePresetData[];
         }
         const response = await fetch(
-            "https://cdn.jsdelivr.net/gh/chatlunalab/awesome-chatluna-presets@preset/presets.json"
+            "https://gcore.jsdelivr.net/gh/chatlunalab/awesome-chatluna-presets@preset/presets.json"
         );
         if (!response.ok) {
             throw new Error("Failed to fetch presets");
