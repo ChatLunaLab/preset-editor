@@ -14,8 +14,8 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from "@/components/ui/pagination";
-import { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router";
+import { useMemo, useState } from "react";
+import { Link } from "react-router";
 import { useSquarePresets } from "@/hooks/use-square-presets";
 
 const sortOptions = [
@@ -31,26 +31,19 @@ const sortOptions = [
 import { motion } from "framer-motion";
 
 export default function SquarePage() {
-    const [searchParams, setSearchParams] = useSearchParams();
 
-    const [sortOption, setSortOption] = useState(searchParams.get("sort") || "downloads");
-    const [currentPage, setCurrentPage] = useState(Number(searchParams.get("page")) || 1);
-    const itemsPerPage = 12; // Displaying 12 items per page
+    const [search, setSearch] = useState("");
+    const [sortOption, setSortOption] = useState("downloads");
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 12;
 
-    useEffect(() => {
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set("page", String(currentPage));
-        newParams.set("sort", sortOption);
-        setSearchParams(newParams);
-
-    }, [currentPage, sortOption, searchParams, setSearchParams]);
-
-    const presets = useSquarePresets(sortOption);
+    const keywords = useMemo(() => search.split(" ").filter(Boolean), [search]);
+    const presets = useSquarePresets(sortOption, keywords);
     const totalPages = Math.ceil(presets.length / itemsPerPage);
 
-    const currentData = presets.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
+    const currentData = useMemo(() => 
+        presets.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage),
+        [presets, currentPage]
     );
 
     const getPaginationRange = () => {
@@ -69,12 +62,23 @@ export default function SquarePage() {
                     <div className="flex items-center gap-4">
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input placeholder="搜索预设..." className="pl-9 bg-background" />
+                            <Input
+                                placeholder="搜索预设..."
+                                className="pl-9 bg-background"
+                                value={search}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setSearch(value);
+                                    setCurrentPage(1);
+                                }}
+                            />
                         </div>
-                        <Select value={sortOption} onValueChange={(value) => {
-                            setSortOption(value);
-                            setCurrentPage(1); // Reset to first page when sorting changes
-                        }}
+                        <Select
+                            value={sortOption}
+                            onValueChange={(value) => {
+                                setSortOption(value);
+                                setCurrentPage(1);
+                            }}
                         >
                             <SelectTrigger className="w-[180px]">
                                 <SelectValue placeholder="排序方式" />
@@ -101,7 +105,7 @@ export default function SquarePage() {
                 >
                     {currentData.map((preset) => (
                         <Link to={`/square/${preset.sha1}`} key={preset.rawPath} className="flex flex-col">
-                            <Card className="break-inside-avoid h-full">
+                            <Card className="break-inside-avoid h-full flex flex-col">
                                 <CardHeader>
                                     <div className="flex items-start justify-between">
                                         <div>
@@ -110,8 +114,8 @@ export default function SquarePage() {
                                         <Badge variant="outline">{preset.type === 'main' ? "主插件预设" : "伪装预设"}</Badge>
                                     </div>
                                 </CardHeader>
-                                <CardContent className="space-y-4 flex flex-col">
-                                    <p className="text-sm text-muted-foreground line-clamp-4 grow">{preset?.description}</p>
+                                <CardContent className="space-y-4 flex flex-col flex-grow">
+                                    <p className="text-sm text-muted-foreground line-clamp-4 flex-grow">{preset?.description}</p>
                                     <div className="flex flex-wrap gap-2">
                                         {preset.tags.map((tag) => (
                                             <Badge key={tag} variant="outline" className="rounded-sm">

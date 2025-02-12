@@ -5,8 +5,12 @@ import { load } from "js-yaml";
 import { useState, useEffect } from "react";
 
 //https://gcore.jsdelivr.net/gh/chatlunalab/awesome-chatluna-presets@preset/presets.json
+
 async function fetchPresets() {
     try {
+        if (globalThis.cachePresets) {
+            return [...globalThis.cachePresets] as SquarePresetData[];
+        }
         const response = await fetch(
             "https://gcore.jsdelivr.net/gh/chatlunalab/awesome-chatluna-presets@preset/presets.json"
         );
@@ -24,7 +28,7 @@ async function fetchPresets() {
     }
 }
 
-export function useSquarePresets(sortOption: string) {
+export function useSquarePresets(sortOption: string, keywords: string[]) {
     const [presets, setPresets] = useState<SquarePresetData[]>([]);
     const [sortedPresets, setSortedPresets] = useState<SquarePresetData[]>([]);
 
@@ -36,7 +40,7 @@ export function useSquarePresets(sortOption: string) {
     }, []);
 
     useEffect(() => {
-        const sorted = [...presets]; // Create a copy to avoid mutating the original array
+        let sorted = [...presets]; // Create a copy to avoid mutating the original array
 
         switch (sortOption) {
             /*   case "downloads":
@@ -57,8 +61,33 @@ export function useSquarePresets(sortOption: string) {
                 break;
         }
 
-        setSortedPresets(sorted);
-    }, [sortOption, presets]);
+        if (keywords.length > 0) {
+            sorted = sorted.filter((preset) => {
+                for (const keyword of keywords) {
+                    const keywordLower = keyword.toLowerCase();
+                    if (
+                        preset.name.toLowerCase().includes(keywordLower) ||
+                        preset.description
+                            .toLowerCase()
+                            .includes(keywordLower) ||
+                        preset.type.toLowerCase().includes(keywordLower) ||
+                        preset.tags.some((tag) =>
+                            tag.toLowerCase().includes(keywordLower)
+                        )
+                    ) {
+                        return true;
+                    }
+                }
+                return false;
+            });
+        }
+
+        setSortedPresets((prev) => {
+            // 浅比较或内容比较，避免相同结果时更新
+            if (JSON.stringify(prev) === JSON.stringify(sorted)) return prev;
+            return sorted;
+        });
+    }, [sortOption, presets, keywords]);
 
     return sortedPresets;
 }
@@ -102,7 +131,7 @@ export function useSquarePresetForNetwork(squarePreset: SquarePresetData) {
         ).then((preset) => {
             setPreset(preset);
         });
-    }, [squarePreset]);
+    }, [squarePreset.rawPath]);
 
     return preset;
 }

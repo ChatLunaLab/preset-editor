@@ -3,7 +3,6 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import tailwindCss from "@tailwindcss/vite";
 import autoprefixer from "autoprefixer";
-import Inspect from "vite-plugin-inspect";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -13,13 +12,7 @@ export default defineConfig({
         },
     },
 
-    plugins: [
-        react(),
-        tailwindCss(),
-        Inspect(),
-       
-       
-    ],
+    plugins: [react(), tailwindCss()],
     resolve: {
         alias: {
             "@": path.resolve(__dirname, "./src"),
@@ -27,7 +20,7 @@ export default defineConfig({
     },
     build: {
         rollupOptions: {
-           /*  external: ["react", "react-dom", "react-router"],
+            /*  external: ["react", "react-dom", "react-router"],
             output: {
                 format: "cjs",
                 globals: {
