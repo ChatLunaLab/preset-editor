@@ -39,3 +39,14 @@ export function updateNestedObject<T>(obj: T, path: string, value: any): T {
     return result;
 }
 
+
+export async function sha1(str: string) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(str)
+    const buffer = await crypto.subtle.digest("SHA-1", data)
+    
+    const hashArray = Array.from(new Uint8Array(buffer))
+    const hashHex = hashArray.map((bytes) => bytes.toString(16).padStart(2, "0")).join("")
+
+    return hashHex
+}

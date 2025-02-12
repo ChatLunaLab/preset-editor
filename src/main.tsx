@@ -7,6 +7,7 @@ import { createHashRouter, RouterProvider } from "react-router-dom";
 import Page from "./pages/app";
 import SquarePage from "./pages/square/page";
 import CharacterEditPage from "./pages/character/page";
+import PresetViewPage from "./pages/square/[id]/page";
 
 
 
@@ -18,6 +19,10 @@ const router = createHashRouter([
     {
         path: "/square",
         element: <SquarePage />,
+    },
+    {
+        path: "/square/:id",
+        element: <PresetViewPage />,
     },
     {
         path: "/character/:id",

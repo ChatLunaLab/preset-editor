@@ -16,7 +16,6 @@ export default function CharacterEditPage() {
     }, [id]);
 
     if (!presetId || typeof presetId !== "string") {
-        console.log(presetId);
         return <div>Preset not found</div>;
     }
 
