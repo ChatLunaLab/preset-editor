@@ -14,9 +14,9 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from "@/components/ui/pagination";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useLayoutEffect } from "react";
 import { Link } from "react-router";
-import { useSquarePresets } from "@/hooks/use-square-presets";
+import { clearPresetViewCache, usePresetViewsData, useSquarePresets } from "@/hooks/use-square-presets";
 
 const sortOptions = [
     {
@@ -41,10 +41,12 @@ export default function SquarePage() {
     const presets = useSquarePresets(sortOption, keywords);
     const totalPages = Math.ceil(presets.length / itemsPerPage);
 
-    const currentData = useMemo(() => 
+    const currentData = useMemo(() =>
         presets.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage),
         [presets, currentPage]
     );
+
+    const presetDataList = usePresetViewsData(currentData);
 
     const getPaginationRange = () => {
         const start = Math.max(1, currentPage - 1);
@@ -52,7 +54,26 @@ export default function SquarePage() {
         return Array.from({ length: end - start + 1 }, (_, i) => start + i);
     };
 
+
     const paginationRange = getPaginationRange();
+
+    useLayoutEffect(() => {
+        const handlePageShow = (event: PageTransitionEvent) => {
+            if (event.persisted) {
+                const last = currentPage
+                clearPresetViewCache()
+                setCurrentPage(last + 1);
+                setCurrentPage(last);
+            }
+        };
+
+        window.addEventListener("pageshow", handlePageShow);
+
+        return () => {
+            window.removeEventListener("pageshow", handlePageShow);
+        };
+    }, []);
+
 
     return (
         <MainLayout>
@@ -115,7 +136,7 @@ export default function SquarePage() {
                                     </div>
                                 </CardHeader>
                                 <CardContent className="space-y-4 flex flex-col flex-grow">
-                                    
+
                                     <p className="text-sm text-muted-foreground line-clamp-7 flex-grow">{preset?.description}</p>
                                     <div className="flex flex-wrap gap-2">
                                         {preset.tags.map((tag) => (
@@ -128,11 +149,11 @@ export default function SquarePage() {
                                         <div className="flex items-center gap-4">
                                             <div className="flex items-center gap-1">
                                                 <Download className="h-4 w-4" />
-                                                <span>{0/* preset.downloads */}</span>
+                                                <span>{presetDataList.find(p => p.path === preset.rawPath)?.downloads ?? 0}</span>
                                             </div>
                                             <div className="flex items-center gap-1">
                                                 <Eye className="h-4 w-4" />
-                                                <span>{0/* preset.views */}</span>
+                                                <span>{presetDataList.find(p => p.path === preset.rawPath)?.views ?? 0}</span>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-1 text-yellow-500">

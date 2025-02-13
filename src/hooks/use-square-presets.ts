@@ -1,192 +1,262 @@
 import { sha1 } from "@/lib/utils";
 import { CharacterPresetTemplate, RawPreset } from "@/types/preset";
-import { SquarePresetData } from "@/types/square";
+import { SquarePresetData, SquarePresetDataView } from "@/types/square";
 import { load } from "js-yaml";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
-//https://gcore.jsdelivr.net/gh/chatlunalab/awesome-chatluna-presets@preset/presets.json
+// 缓存管理对象
+const cacheManager = {
+    presets: {
+        data: null as SquarePresetData[] | null,
+        timestamp: 0,
+        ttl: 3600_000, // 1小时缓存
+    },
+    presetData: new Map<string, SquarePresetDataView>(),
+    presetContent: new Map<string, string>(),
+};
 
-async function fetchPresets() {
+const API_URL = "https://api-chatluna-preset-market.dingyi222666.top"; 
+
+// 通用请求处理器
+const fetchWithCache = async <T>({
+    url,
+    cacheKey,
+    parser,
+    ttl,
+}: {
+    url: string;
+    cacheKey: keyof typeof cacheManager;
+    parser: (response: Response) => Promise<T>;
+    ttl: number;
+}): Promise<T> => {
+    if (cacheKey !== "presets") {
+        return;
+    }
+
+    const now = Date.now();
+    const cache = cacheManager[cacheKey];
+
+    if (cache.data && now - cache.timestamp < ttl) {
+        return cache.data as T;
+    }
+
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch ${cacheKey}`);
+
+    const data = await parser(response);
+    cacheManager[cacheKey].data = data as SquarePresetData[];
+    cacheManager[cacheKey].timestamp = now;
+
+    return data;
+};
+
+// 获取预设列表
+const fetchPresets = async (): Promise<SquarePresetData[]> => {
     try {
-        if (globalThis.cachePresets) {
-            return globalThis.cachePresets as SquarePresetData[];
-        }
-        const response = await fetch(
-            "https://cdn.jsdmirror.com/gh/chatlunalab/awesome-chatluna-presets@preset/presets.json"
-        );
-        if (!response.ok) {
-            throw new Error("Failed to fetch presets");
-        }
-        const loadedPreset = (await response.json()) as SquarePresetData[];
-        for (const preset of loadedPreset) {
-            preset.sha1 = await sha1(preset.rawPath);
-        }
-        globalThis.cachePresets = loadedPreset;
-        return loadedPreset;
+        return await fetchWithCache({
+            url: "https://cdn.jsdmirror.com/gh/chatlunalab/awesome-chatluna-presets@preset/presets.json",
+            cacheKey: "presets",
+            parser: async (response) => {
+                const data = (await response.json()) as SquarePresetData[];
+                await Promise.all(
+                    data.map(async (preset) => {
+                        preset.sha1 = await sha1(preset.rawPath);
+                    })
+                );
+                return data;
+            },
+            ttl: cacheManager.presets.ttl,
+        });
     } catch (error) {
         console.error("Error fetching presets:", error);
+        return [];
     }
-}
+};
+
+// 获取预设元数据
+export const fetchPresetData = async (
+    presets: SquarePresetData[]
+): Promise<SquarePresetDataView[]> => {
+    const presetPaths = presets.map((p) => p.rawPath);
+    const cachedData = presetPaths
+        .map((path) => cacheManager.presetData.get(path))
+        .filter(Boolean) as SquarePresetDataView[];
+
+    if (cachedData.length === presetPaths.length) {
+        return cachedData.sort((a, b) => b.path.localeCompare(a.path));
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/query_preset_views`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(presetPaths),
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch preset data");
+
+        const newData = (await response.json()) as SquarePresetDataView[];
+        newData.forEach((data) => cacheManager.presetData.set(data.path, data));
+
+        return newData.sort((a, b) => b.path.localeCompare(a.path));
+    } catch (error) {
+        console.error("Error fetching preset data:", error);
+        return [];
+    }
+};
+
+// 排序策略
+const sortStrategies = {
+    downloads: (a: SquarePresetData, b: SquarePresetData) =>
+        (b.meta?.downloads || 0) - (a.meta?.downloads || 0),
+    views: (a: SquarePresetData, b: SquarePresetData) =>
+        (b.meta?.views || 0) - (a.meta?.views || 0),
+    rating: (a: SquarePresetData, b: SquarePresetData) => b.rating - a.rating,
+    newest: (a: SquarePresetData, b: SquarePresetData) =>
+        b.modified - a.modified,
+};
+
+// 关键词过滤
+const filterByKeywords = (preset: SquarePresetData, keywords: string[]) => {
+    const lowerKeywords = keywords.map((k) => k.toLowerCase());
+    const presetType = preset.type === "main" ? "主插件" : "伪装";
+
+    return lowerKeywords.some(
+        (keyword) =>
+            preset.name.toLowerCase().includes(keyword) ||
+            preset.description.toLowerCase().includes(keyword) ||
+            presetType.includes(keyword) ||
+            preset.tags.some((tag) => tag.toLowerCase().includes(keyword))
+    );
+};
 
 export function useSquarePresets(sortOption: string, keywords: string[]) {
     const [presets, setPresets] = useState<SquarePresetData[]>([]);
-    const [sortedPresets, setSortedPresets] = useState<SquarePresetData[]>([]);
 
-    // fetch presets from url
     useEffect(() => {
-        fetchPresets().then((presets) => {
-            setPresets(presets);
-        });
+        fetchPresets().then(setPresets);
     }, []);
 
-    useEffect(() => {
-        let sorted = [...presets]; // Create a copy to avoid mutating the original array
-
-        switch (sortOption) {
-            /*   case "downloads":
-                sorted.sort((a, b) => b.downloads - a.downloads);
-                break;
-            case "views":
-                sorted.sort((a, b) => b.views - a.views);
-                break; */
-            case "rating":
-                sorted.sort((a, b) => b.rating - a.rating);
-                break;
-            case "newest":
-                // Assuming 'id' represents the creation order, sort by id in descending order
-                sorted.sort((a, b) => b.modified - a.modified);
-                break;
-            default:
-                // No sorting
-                break;
-        }
-
-        if (keywords.length > 0) {
-            sorted = sorted.filter((preset) => {
-                for (const keyword of keywords) {
-                    const keywordLower = keyword.toLowerCase();
-                    const presetType =
-                        preset.type === "main" ? "主插件" : "伪装";
-                    if (
-                        preset.name.toLowerCase().includes(keywordLower) ||
-                        preset.description
-                            .toLowerCase()
-                            .includes(keywordLower) ||
-                        presetType.includes(keywordLower) ||
-                        preset.tags.some((tag) =>
-                            tag.toLowerCase().includes(keywordLower)
-                        )
-                    ) {
-                        return true;
-                    }
-                }
-                return false;
-            });
-        }
-
-        setSortedPresets((prev) => {
-            // 浅比较或内容比较，避免相同结果时更新
-            if (JSON.stringify(prev) === JSON.stringify(sorted)) return prev;
-            return sorted;
+    const sortedPresets = useMemo(() => {
+        const sorted = [...presets].map((p) => {
+            const meta = cacheManager.presetData.get(p.rawPath);
+            return { ...p, meta };
         });
-    }, [sortOption, presets, keywords]);
+
+        if (sortOption in sortStrategies) {
+            sorted.sort(sortStrategies[sortOption]);
+        }
+
+        return keywords.length
+            ? sorted.filter((p) => filterByKeywords(p, keywords))
+            : sorted;
+    }, [presets, sortOption, keywords]);
 
     return sortedPresets;
 }
+
+export function usePresetViewsData(presets: SquarePresetData[]) {
+    const [presetData, setPresetData] = useState<SquarePresetDataView[]>([]);
+
+    useEffect(() => {
+        fetchPresetData(presets).then(setPresetData);
+    }, [presets]);
+
+    return presetData;
+}
+
+// 通用统计递增方法
+const incrementStat = async (id: string, type: "views" | "downloads") => {
+    try {
+        const response = await fetch(
+            `${API_URL}/increment_preset_${type}?path=${id}`,
+            { headers: { "Content-Type": "application/json" } }
+        );
+        if (!response.ok) throw new Error(`Failed to increment ${type}`);
+        return response;
+    } catch (error) {
+        console.error(`Error incrementing ${type}:`, error);
+        throw error;
+    }
+};
+
+export function clearPresetViewCache() {
+    cacheManager.presetData.clear(); 
+}
+
+export const incrementViews = (id: string) => incrementStat(id, "views");
+export const incrementDownloads = (id: string) =>
+    incrementStat(id, "downloads");
 
 export function useSquarePreset(id: string) {
     const [preset, setPreset] = useState<SquarePresetData>();
 
     useEffect(() => {
-        const cachePresets = globalThis.cachePresets as
-            | SquarePresetData[]
-            | undefined;
+        const findPreset = (data: SquarePresetData[]) =>
+            data.find((p) => p.sha1 === id);
 
-        if (cachePresets) {
-            const preset = cachePresets.find((preset) => preset.sha1 === id);
-
-            setPreset(preset);
-
-            return;
+        if (cacheManager.presets.data) {
+            setPreset(findPreset(cacheManager.presets.data));
+        } else {
+            fetchPresets().then((data) => setPreset(findPreset(data)));
         }
-        fetchPresets().then((presets) => {
-            const preset = presets.find((preset) => preset.sha1 === id);
-
-            setPreset(preset);
-        });
     }, [id]);
 
     return preset;
 }
 
-export function useSquarePresetForNetwork(squarePreset: SquarePresetData) {
-    const [preset, setPreset] = useState<
-        RawPreset | CharacterPresetTemplate | undefined
-    >();
+// 预设内容加载
+const loadPresetContent = async (url: string) => {
+    if (cacheManager.presetContent.has(url)) {
+        return cacheManager.presetContent.get(url)!;
+    }
 
-    useEffect(() => {
-        loadPresetForNetwork(
+    const response = await fetch(url);
+    const content = await response.text();
+    cacheManager.presetContent.set(url, content);
+    return content;
+};
+
+export const loadPresetForNetwork = async (url: string) => {
+    const content = await loadPresetContent(url);
+    return load(content) as RawPreset | CharacterPresetTemplate;
+};
+
+export function useSquarePresetForNetwork(squarePreset: SquarePresetData) {
+    const [preset, setPreset] = useState<RawPreset | CharacterPresetTemplate>();
+    const cdnUrl = useMemo(
+        () =>
             squarePreset.rawPath.replace(
                 "https://raw.githubusercontent.com/ChatLunaLab/awesome-chatluna-presets/main/presets",
                 "https://gcore.jsdelivr.net/gh/chatlunalab/awesome-chatluna-presets@main/presets"
-            )
-        ).then((preset) => {
-            setPreset(preset);
-        });
-    }, [squarePreset.rawPath]);
+            ),
+        [squarePreset.rawPath]
+    );
+
+    useEffect(() => {
+        loadPresetForNetwork(cdnUrl).then(setPreset);
+    }, [cdnUrl]);
 
     return preset;
 }
 
-export async function loadPresetContent(url: string) {
-    const cache_preset = globalThis.cache_preset as {
-        [key: string]: string;
-    };
-
-    if (cache_preset?.[url]) {
-        return cache_preset[url];
-    }
-
-    return fetch(url)
-        .then((response) => response.text())
-        .then((content) => {
-            globalThis.cache_preset = globalThis.cache_preset || {};
-
-            globalThis.cache_preset[url] = content;
-
-            return content;
-        });
-}
-
-export async function loadPresetForNetwork(url: string) {
-    const cache_preset = globalThis.cache_preset as {
-        [key: string]: string;
-    };
-
-    if (cache_preset?.[url]) {
-        return load(cache_preset[url]) as RawPreset | CharacterPresetTemplate;
-    }
-
-    return loadPresetContent(url).then((content) => {
-        const preset = load(content) as RawPreset | CharacterPresetTemplate;
-
-        return preset as RawPreset | CharacterPresetTemplate;
-    });
-}
-
 export async function downloadPreset(preset: SquarePresetData) {
-    const response = await fetch(
-        preset.rawPath.replace(
-            "https://raw.githubusercontent.com/ChatLunaLab/awesome-chatluna-presets/main/presets",
-            "https://gcore.jsdelivr.net/gh/chatlunalab/awesome-chatluna-presets@main/presets"
-        )
+    const url = preset.rawPath.replace(
+        "https://raw.githubusercontent.com/ChatLunaLab/awesome-chatluna-presets/main/presets",
+        "https://gcore.jsdelivr.net/gh/chatlunalab/awesome-chatluna-presets@main/presets"
     );
-    const blob = await response.blob();
 
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = preset.name + ".yml";
-    a.click();
+    const blob = await fetch(url).then((r) => r.blob());
+    const objectUrl = URL.createObjectURL(blob);
 
-    document.body.removeChild(a);
+    const anchor = document.createElement("a");
+    anchor.href = objectUrl;
+    anchor.download = `${preset.name}.yml`;
+    document.body.appendChild(anchor);
+    anchor.click();
+
+    setTimeout(() => {
+        URL.revokeObjectURL(objectUrl);
+        document.body.removeChild(anchor);
+    }, 100);
 }

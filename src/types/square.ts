@@ -9,4 +9,11 @@ export interface SquarePresetData {
     sha1: string;
     relativePath: string;
     type: "main" | "character";
+    meta?: SquarePresetDataView
+}
+
+export interface SquarePresetDataView {
+    path: string;
+    views: number;
+    downloads: number;
 }

@@ -8,7 +8,7 @@ import { Download, Eye, Pencil } from "lucide-react"
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router";
-import { downloadPreset, useSquarePresetForNetwork } from "@/hooks/use-square-presets"
+import { downloadPreset, incrementDownloads, useSquarePresetForNetwork } from "@/hooks/use-square-presets"
 import { SquarePresetData } from "@/types/square"
 import { CharacterPresetTemplate, isCharacterPresetTemplate, isRawPreset, RawPreset } from "@/types/preset"
 import { cn } from "@/lib/utils";
@@ -55,7 +55,10 @@ export function PresetDetails({ squarePreset }: PresetDetailsProps) {
             <Eye className="h-4 w-4 mr-2" />
             预览
           </Button>
-          <Button variant="outline" onClick={() => downloadPreset(squarePreset)} size="sm">
+          <Button variant="outline" onClick={() => {
+            downloadPreset(squarePreset)
+            incrementDownloads(squarePreset.rawPath)
+          }} size="sm">
             <Download className="h-4 w-4 mr-2" />
             下载
           </Button>
