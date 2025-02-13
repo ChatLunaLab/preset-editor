@@ -1,14 +1,16 @@
 "use client";
 
+"use client";
+
 import { MainLayout } from "@/components/main-layout";
 import { CharacterList } from "@/components/character-list";
-import { Button } from "@/components/ui/button";
 import { importPreset, usePresets } from "@/hooks/use-preset";
 import { NewPresetDialog } from "@/components/new-preset-dialog";
 import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Upload } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Import, Upload } from "lucide-react";
 
 export default function Page() {
     const presets = usePresets();
@@ -52,12 +54,19 @@ export default function Page() {
                             autoComplete="off"
                         />
                         <div className="flex gap-2">
+                            <a  target="_blank" rel="noopener noreferrer"
+                             href="https://github.com/ChatLunaLab/awesome-chatluna-presets/new/main/presets/chatluna">
+                            <Button variant="secondary" > 
+                                <Upload className="h-4 w-4" />
+                                <span className="hidden md:inline">上传预设</span>
+                            </Button>
+                            </a>
                             <Button
                                 variant="secondary"
                                 onClick={() => fileInputRef.current?.click()}
-                                className="md:!p-2"
+
                             >
-                                <Upload className="h-4 w-4 md:mr-0" />
+                                <Import className="h-4 w-4 md:mr-0" />
                                 <span className="hidden md:inline">
                                     导入预设
                                 </span>
@@ -69,7 +78,6 @@ export default function Page() {
                                 className="hidden"
                                 onChange={handleImportData}
                             />
-
                             <NewPresetDialog />
                         </div>
                     </div>
