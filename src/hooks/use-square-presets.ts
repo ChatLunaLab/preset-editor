@@ -54,7 +54,7 @@ const fetchWithCache = async <T>({
 const fetchPresets = async (): Promise<SquarePresetData[]> => {
     try {
         return await fetchWithCache({
-            url: "https://cdn.jsdmirror.com/gh/chatlunalab/awesome-chatluna-presets@preset/presets.json",
+            url: "https://cdn.jsdelivr.net/gh/chatlunalab/awesome-chatluna-presets@preset/presets.json",
             cacheKey: "presets",
             parser: async (response) => {
                 const data = (await response.json()) as SquarePresetData[];
