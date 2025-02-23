@@ -22,15 +22,23 @@ import { createCharacterPreset, createMainPreset } from "@/hooks/use-preset";
 export function NewPresetDialog() {
     const [name, setName] = useState("");
     const [type, setType] = useState("main");
+    const [error, setError] = useState("");
 
-    const handleCreatePreset = async () => {
-        if (type === "main") {
-            await createMainPreset(name);
+    const handleCreatePreset = async (e: React.MouseEvent) => {
+        if (!name.trim()) {
+            setError("请输入预设名称");
+            e.preventDefault();
+            return;
         }
 
-        await createCharacterPreset(name);
-    };
+        setError("");
 
+        if (type === "main") {
+            await createMainPreset(name);
+        } else {
+            await createCharacterPreset(name);
+        }
+    };
     return (
         <Dialog>
             <DialogTrigger asChild>
@@ -52,8 +60,13 @@ export function NewPresetDialog() {
                         <Input
                             id="name"
                             value={name}
-                            onChange={(e) => setName(e.target.value)}
+                            onChange={(e) => {
+                                setName(e.target.value);
+                                setError("");
+                            }}
+                            className={error ? "border-red-500" : ""}
                         />
+                        {error && <span className="text-sm text-red-500">{error}</span>}
                     </div>
                     <div className="grid gap-2">
                         <label htmlFor="type" className="text-sm">

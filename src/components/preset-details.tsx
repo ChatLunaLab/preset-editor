@@ -141,8 +141,8 @@ export function CharacterPresetDetails(preset: CharacterPresetTemplate, squarePr
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
               <DetailItem label="名称" value={preset.name} />
               <DetailItem label="更新时间" value={new Date(squarePresetData.modified).toLocaleString()} />
-              <DetailItem label="触发关键词" value={preset.nick_name.join(", ") ?? "空"} />
-              <DetailItem label="禁言关键词" value={preset.mute_keyword.join(", ")} />
+              <DetailItem label="触发关键词" value={preset.nick_name?.join(", ") ?? "空"} />
+              <DetailItem label="禁言关键词" value={preset.mute_keyword?.join(", ") ?? "空"} />
               <DetailItem label="状态" value={preset.status} />
               <DetailItem label="预设描述（可能由 AI 生成）" value={squarePresetData.description ?? "空"} />
             </div>
