@@ -139,13 +139,13 @@ export function useSquarePresets(sortOption: string, keywords: string[]) {
     }, []);
 
     const sortedPresets = useMemo(() => {
-        const sorted = [...presets].map((p) => {
+        let sorted = [...presets].map((p) => {
             const meta = cacheManager.presetData.get(p.rawPath);
             return { ...p, meta };
         });
 
         if (sortOption in sortStrategies) {
-            sorted.sort(sortStrategies[sortOption]);
+            sorted = sorted.sort(sortStrategies[sortOption]);
         }
 
         return keywords.length
