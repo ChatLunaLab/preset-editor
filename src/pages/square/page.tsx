@@ -19,11 +19,11 @@ import { Link } from "react-router";
 import { usePresetViewsData, useSquarePresets } from "@/hooks/use-square-presets";
 
 const sortOptions = [
+    { value: "views", label: "浏览最多" },
     {
         value: "downloads",
         label: "下载最多",
     },
-    { value: "views", label: "浏览最多" },
     { value: "rating", label: "评分最高" },
     { value: "newest", label: "最新发布" },
 ]
@@ -33,7 +33,7 @@ import { motion } from "framer-motion";
 export default function SquarePage() {
 
     const [search, setSearch] = useState("");
-    const [sortOption, setSortOption] = useState("downloads");
+    const [sortOption, setSortOption] = useState("views");
     const [currentPage, setCurrentPage] = useState(1);
 
     const itemsPerPage = 12;
