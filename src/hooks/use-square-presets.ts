@@ -54,7 +54,7 @@ const fetchWithCache = async <T>({
 const fetchPresets = async (): Promise<SquarePresetData[]> => {
     try {
         return await fetchWithCache({
-            url: "https://cdn.jsdelivr.net/gh/chatlunalab/awesome-chatluna-presets@preset/presets.json",
+            url: `https://gcore.jsdelivr.net/gh/chatlunalab/awesome-chatluna-presets@preset/presets.json?t=${Date.now()}`,
             cacheKey: "presets",
             parser: async (response) => {
                 const data = (await response.json()) as SquarePresetData[];
@@ -229,7 +229,7 @@ export function useSquarePresetForNetwork(squarePreset: SquarePresetData) {
         () =>
             squarePreset.rawPath.replace(
                 "https://raw.githubusercontent.com/ChatLunaLab/awesome-chatluna-presets/main/presets",
-                "https://cdn.jsdelivr.net/gh/chatlunalab/awesome-chatluna-presets@main/presets"
+                "https://gcore.jsdelivr.net/gh/chatlunalab/awesome-chatluna-presets@main/presets"
             ),
         [squarePreset.rawPath]
     );
