@@ -14,7 +14,7 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from "@/components/ui/pagination";
-import { useMemo, useState, useLayoutEffect } from "react";
+import { useMemo, useState, useLayoutEffect, useEffect } from "react";
 import { Link } from "react-router";
 import { usePresetViewsData, useSquarePresets } from "@/hooks/use-square-presets";
 
@@ -35,11 +35,12 @@ export default function SquarePage() {
     const [search, setSearch] = useState("");
     const [sortOption, setSortOption] = useState("views");
     const [currentPage, setCurrentPage] = useState(1);
+    const [refresh, setRefresh] = useState(false);
 
     const itemsPerPage = 12;
 
     const keywords = useMemo(() => search.split(" ").filter(Boolean), [search]);
-    const presets = useSquarePresets(sortOption, keywords);
+    const presets = useSquarePresets(sortOption, keywords, refresh);
     const totalPages = Math.ceil(presets.length / itemsPerPage);
 
     const currentData = useMemo(() =>
@@ -55,15 +56,15 @@ export default function SquarePage() {
         return Array.from({ length: end - start + 1 }, (_, i) => start + i);
     };
 
-
     const paginationRange = getPaginationRange();
 
     useLayoutEffect(() => {
         const handlePageShow = (event: PageTransitionEvent) => {
             if (event.persisted) {
-                const oldSearch = search
-                setSearch(" ")
-                setSearch(oldSearch)
+                setRefresh(true)
+                setTimeout(() => {
+                    setRefresh(false)
+                }, 10)
             }
         };
 
@@ -73,6 +74,13 @@ export default function SquarePage() {
             window.removeEventListener("pageshow", handlePageShow);
         };
     }, []);
+
+    useEffect(() => {
+        setRefresh(true)
+        setTimeout(() => {
+            setRefresh(false)
+        }, 10)
+    }, [presetDataList])
 
 
     return (

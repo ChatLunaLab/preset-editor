@@ -131,7 +131,11 @@ const filterByKeywords = (preset: SquarePresetData, keywords: string[]) => {
     );
 };
 
-export function useSquarePresets(sortOption: string, keywords: string[]) {
+export function useSquarePresets(
+    sortOption: string,
+    keywords: string[],
+    refresh: boolean
+) {
     const [presets, setPresets] = useState<SquarePresetData[]>([]);
 
     useEffect(() => {
@@ -151,7 +155,7 @@ export function useSquarePresets(sortOption: string, keywords: string[]) {
         return keywords.length
             ? sorted.filter((p) => filterByKeywords(p, keywords))
             : sorted;
-    }, [presets, sortOption, keywords]);
+    }, [presets, sortOption, keywords, refresh]);
 
     return sortedPresets;
 }
