@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/pagination";
 import { useMemo, useState, useLayoutEffect } from "react";
 import { Link } from "react-router";
-import { clearPresetViewCache, usePresetViewsData, useSquarePresets } from "@/hooks/use-square-presets";
+import { usePresetViewsData, useSquarePresets } from "@/hooks/use-square-presets";
 
 const sortOptions = [
     {
@@ -35,6 +35,7 @@ export default function SquarePage() {
     const [search, setSearch] = useState("");
     const [sortOption, setSortOption] = useState("downloads");
     const [currentPage, setCurrentPage] = useState(1);
+
     const itemsPerPage = 12;
 
     const keywords = useMemo(() => search.split(" ").filter(Boolean), [search]);
@@ -46,7 +47,7 @@ export default function SquarePage() {
         [presets, currentPage]
     );
 
-    const presetDataList = usePresetViewsData(currentData);
+    const presetDataList = usePresetViewsData(presets)
 
     const getPaginationRange = () => {
         const start = Math.max(1, currentPage - 1);
@@ -60,10 +61,9 @@ export default function SquarePage() {
     useLayoutEffect(() => {
         const handlePageShow = (event: PageTransitionEvent) => {
             if (event.persisted) {
-                const last = currentPage
-                clearPresetViewCache()
-                setCurrentPage(last + 1);
-                setCurrentPage(last);
+                const oldSearch = search
+                setSearch(" ")
+                setSearch(oldSearch)
             }
         };
 
