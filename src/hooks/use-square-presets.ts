@@ -15,7 +15,7 @@ const cacheManager = {
     presetContent: new Map<string, string>(),
 };
 
-const API_URL = "https://api-chatluna-preset-market.dingyi222666.top"; 
+const API_URL = "https://api-chatluna-preset-market.dingyi222666.top";
 
 // 通用请求处理器
 const fetchWithCache = async <T>({
@@ -118,15 +118,16 @@ const sortStrategies = {
 
 // 关键词过滤
 const filterByKeywords = (preset: SquarePresetData, keywords: string[]) => {
-    const lowerKeywords = keywords.map((k) => k.toLowerCase());
+    const lowerKeywords = keywords?.map((k) => k?.toLowerCase() ?? "") ?? [];
     const presetType = preset.type === "main" ? "主插件" : "伪装";
 
     return lowerKeywords.some(
         (keyword) =>
-            preset.name.toLowerCase().includes(keyword) ||
-            preset.description.toLowerCase().includes(keyword) ||
+            (preset.name?.toLowerCase().includes(keyword) ?? false) ||
+            (preset.description?.toLowerCase().includes(keyword) ?? false) ||
             presetType.includes(keyword) ||
-            preset.tags.some((tag) => tag.toLowerCase().includes(keyword))
+            (preset.tags?.some((tag) => tag.toLowerCase().includes(keyword)) ??
+                false)
     );
 };
 
@@ -181,7 +182,7 @@ const incrementStat = async (id: string, type: "views" | "downloads") => {
 };
 
 export function clearPresetViewCache() {
-    cacheManager.presetData.clear(); 
+    cacheManager.presetData.clear();
 }
 
 export const incrementViews = (id: string) => incrementStat(id, "views");
@@ -228,7 +229,7 @@ export function useSquarePresetForNetwork(squarePreset: SquarePresetData) {
         () =>
             squarePreset.rawPath.replace(
                 "https://raw.githubusercontent.com/ChatLunaLab/awesome-chatluna-presets/main/presets",
-                "https://gcore.jsdelivr.net/gh/chatlunalab/awesome-chatluna-presets@main/presets"
+                "https://cdn.jsdelivr.net/gh/chatlunalab/awesome-chatluna-presets@main/presets"
             ),
         [squarePreset.rawPath]
     );

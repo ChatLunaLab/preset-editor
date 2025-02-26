@@ -139,7 +139,7 @@ export default function SquarePage() {
 
                                     <p className="text-sm text-muted-foreground line-clamp-7 flex-grow">{preset?.description}</p>
                                     <div className="flex flex-wrap gap-2">
-                                        {preset.tags.map((tag) => (
+                                        {preset.tags?.map((tag) => (
                                             <Badge key={tag} variant="outline" className="rounded-sm">
                                                 {tag}
                                             </Badge>
