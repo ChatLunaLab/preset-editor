@@ -60,7 +60,7 @@ export default function SquarePage() {
         [presets, currentPage]
     );
 
-    const presetDataList = usePresetViewsData(presets);
+    const presetDataList = usePresetViewsData(presets,refresh);
 
     const getPaginationRange = () => {
         const start = Math.max(1, currentPage - 1);
@@ -93,7 +93,7 @@ export default function SquarePage() {
         setTimeout(() => {
             setRefresh(false);
         }, 10);
-    }, [search, sortOption]);
+    }, [currentData]);
 
     return (
         <MainLayout>

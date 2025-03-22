@@ -1,8 +1,8 @@
-import { sha1 } from "@/lib/utils";
-import { CharacterPresetTemplate, RawPreset } from "@/types/preset";
-import { SquarePresetData, SquarePresetDataView } from "@/types/square";
-import { load } from "js-yaml";
-import { useState, useEffect, useMemo } from "react";
+import { sha1 } from '@/lib/utils';
+import { CharacterPresetTemplate, RawPreset } from '@/types/preset';
+import { SquarePresetData, SquarePresetDataView } from '@/types/square';
+import { load } from 'js-yaml';
+import { useState, useEffect, useMemo } from 'react';
 
 // 缓存管理对象
 const cacheManager = {
@@ -15,7 +15,7 @@ const cacheManager = {
     presetContent: new Map<string, string>(),
 };
 
-const API_URL = "https://api-chatluna-preset-market.dingyi222666.top";
+const API_URL = 'https://api-chatluna-preset-market.dingyi222666.top';
 
 // 通用请求处理器
 const fetchWithCache = async <T>({
@@ -29,7 +29,7 @@ const fetchWithCache = async <T>({
     parser: (response: Response) => Promise<T>;
     ttl: number;
 }): Promise<T> => {
-    if (cacheKey !== "presets") {
+    if (cacheKey !== 'presets') {
         return;
     }
 
@@ -55,7 +55,7 @@ const fetchPresets = async (): Promise<SquarePresetData[]> => {
     try {
         return await fetchWithCache({
             url: `https://gcore.jsdelivr.net/gh/chatlunalab/awesome-chatluna-presets@preset/presets.json?t=${Date.now()}`,
-            cacheKey: "presets",
+            cacheKey: 'presets',
             parser: async (response) => {
                 const data = (await response.json()) as SquarePresetData[];
                 await Promise.all(
@@ -68,7 +68,7 @@ const fetchPresets = async (): Promise<SquarePresetData[]> => {
             ttl: cacheManager.presets.ttl,
         });
     } catch (error) {
-        console.error("Error fetching presets:", error);
+        console.error('Error fetching presets:', error);
         return [];
     }
 };
@@ -88,19 +88,19 @@ export const fetchPresetData = async (
 
     try {
         const response = await fetch(`${API_URL}/query_preset_views`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(presetPaths),
         });
 
-        if (!response.ok) throw new Error("Failed to fetch preset data");
+        if (!response.ok) throw new Error('Failed to fetch preset data');
 
         const newData = (await response.json()) as SquarePresetDataView[];
         newData.forEach((data) => cacheManager.presetData.set(data.path, data));
 
         return newData.sort((a, b) => b.path.localeCompare(a.path));
     } catch (error) {
-        console.error("Error fetching preset data:", error);
+        console.error('Error fetching preset data:', error);
         return [];
     }
 };
@@ -118,8 +118,8 @@ const sortStrategies = {
 
 // 关键词过滤
 const filterByKeywords = (preset: SquarePresetData, keywords: string[]) => {
-    const lowerKeywords = keywords?.map((k) => k?.toLowerCase() ?? "") ?? [];
-    const presetType = preset.type === "main" ? "主插件" : "伪装";
+    const lowerKeywords = keywords?.map((k) => k?.toLowerCase() ?? '') ?? [];
+    const presetType = preset.type === 'main' ? '主插件' : '伪装';
 
     return lowerKeywords.some(
         (keyword) =>
@@ -160,22 +160,25 @@ export function useSquarePresets(
     return sortedPresets;
 }
 
-export function usePresetViewsData(presets: SquarePresetData[]) {
+export function usePresetViewsData(
+    presets: SquarePresetData[],
+    refresh: boolean
+) {
     const [presetData, setPresetData] = useState<SquarePresetDataView[]>([]);
 
     useEffect(() => {
         fetchPresetData(presets).then(setPresetData);
-    }, [presets]);
+    }, [presets, refresh]);
 
     return presetData;
 }
 
 // 通用统计递增方法
-const incrementStat = async (id: string, type: "views" | "downloads") => {
+const incrementStat = async (id: string, type: 'views' | 'downloads') => {
     try {
         const response = await fetch(
             `${API_URL}/increment_preset_${type}?path=${id}`,
-            { headers: { "Content-Type": "application/json" } }
+            { headers: { 'Content-Type': 'application/json' } }
         );
         if (!response.ok) throw new Error(`Failed to increment ${type}`);
         return response;
@@ -189,9 +192,9 @@ export function clearPresetViewCache() {
     cacheManager.presetData.clear();
 }
 
-export const incrementViews = (id: string) => incrementStat(id, "views");
+export const incrementViews = (id: string) => incrementStat(id, 'views');
 export const incrementDownloads = (id: string) =>
-    incrementStat(id, "downloads");
+    incrementStat(id, 'downloads');
 
 export function useSquarePreset(id: string) {
     const [preset, setPreset] = useState<SquarePresetData>();
@@ -232,8 +235,8 @@ export function useSquarePresetForNetwork(squarePreset: SquarePresetData) {
     const cdnUrl = useMemo(
         () =>
             squarePreset.rawPath.replace(
-                "https://raw.githubusercontent.com/ChatLunaLab/awesome-chatluna-presets/main/presets",
-                "https://gcore.jsdelivr.net/gh/chatlunalab/awesome-chatluna-presets@main/presets"
+                'https://raw.githubusercontent.com/ChatLunaLab/awesome-chatluna-presets/main/presets',
+                'https://gcore.jsdelivr.net/gh/chatlunalab/awesome-chatluna-presets@main/presets'
             ),
         [squarePreset.rawPath]
     );
@@ -247,14 +250,14 @@ export function useSquarePresetForNetwork(squarePreset: SquarePresetData) {
 
 export async function downloadPreset(preset: SquarePresetData) {
     const url = preset.rawPath.replace(
-        "https://raw.githubusercontent.com/ChatLunaLab/awesome-chatluna-presets/main/presets",
-        "https://gcore.jsdelivr.net/gh/chatlunalab/awesome-chatluna-presets@main/presets"
+        'https://raw.githubusercontent.com/ChatLunaLab/awesome-chatluna-presets/main/presets',
+        'https://gcore.jsdelivr.net/gh/chatlunalab/awesome-chatluna-presets@main/presets'
     );
 
     const blob = await fetch(url).then((r) => r.blob());
     const objectUrl = URL.createObjectURL(blob);
 
-    const anchor = document.createElement("a");
+    const anchor = document.createElement('a');
     anchor.href = objectUrl;
     anchor.download = `${preset.name}.yml`;
     document.body.appendChild(anchor);
