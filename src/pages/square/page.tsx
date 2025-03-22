@@ -20,12 +20,9 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from '@/components/ui/pagination';
-import { useMemo, useState, useLayoutEffect, useEffect } from 'react';
+import { useMemo, useState, useLayoutEffect } from 'react';
 import { Link } from 'react-router';
-import {
-    usePresetViewsData,
-    useSquarePresets,
-} from '@/hooks/use-square-presets';
+import { useSquarePresets } from '@/hooks/use-square-presets';
 
 const sortOptions = [
     { value: 'views', label: '浏览最多' },
@@ -44,24 +41,25 @@ export default function SquarePage() {
     const [sortOption, setSortOption] = useState('views');
     const [currentPage, setCurrentPage] = useState(1);
     const [refresh, setRefresh] = useState(false);
-    const [viewRefresh, setViewRefresh] = useState(false);
 
     const itemsPerPage = 12;
 
     const keywords = useMemo(() => search.split(' ').filter(Boolean), [search]);
-    const presets = useSquarePresets(sortOption, keywords, refresh);
-    const totalPages = Math.ceil(presets.length / itemsPerPage);
+    const { presets: sourcePresets, presetDataList } = useSquarePresets(
+        sortOption,
+        keywords,
+        refresh
+    );
+    const totalPages = Math.ceil(sourcePresets.length / itemsPerPage);
 
     const currentData = useMemo(
         () =>
-            presets.slice(
+            sourcePresets.slice(
                 (currentPage - 1) * itemsPerPage,
                 currentPage * itemsPerPage
             ),
-        [presets, currentPage]
+        [sourcePresets, currentPage]
     );
-
-    const presetDataList = usePresetViewsData(presets, viewRefresh);
 
     const getPaginationRange = () => {
         const start = Math.max(1, currentPage - 1);
@@ -87,14 +85,6 @@ export default function SquarePage() {
             window.removeEventListener('pageshow', handlePageShow);
         };
     }, []);
-
-    // Add effect to refresh when search or sort options change
-    useEffect(() => {
-        setViewRefresh(true);
-        setTimeout(() => {
-            setViewRefresh(false);
-        }, 10);
-    }, [currentData]);
 
     return (
         <MainLayout>

@@ -137,11 +137,15 @@ export function useSquarePresets(
     refresh: boolean
 ) {
     const [presets, setPresets] = useState<SquarePresetData[]>([]);
+    const [presetData, setPresetData] = useState<SquarePresetDataView[]>([]);
+    const [previousSortedIds, setPreviousSortedIds] = useState<string[]>([]);
 
+    // 获取所有预设数据
     useEffect(() => {
         fetchPresets().then(setPresets);
     }, []);
 
+    // 根据排序和过滤条件处理预设数据
     const sortedPresets = useMemo(() => {
         let sorted = [...presets].map((p) => {
             const meta = cacheManager.presetData.get(p.rawPath);
@@ -155,22 +159,47 @@ export function useSquarePresets(
         return keywords.length
             ? sorted.filter((p) => filterByKeywords(p, keywords))
             : sorted;
-    }, [presets, sortOption, keywords, refresh]);
+    }, [presets, sortOption, keywords, refresh, presetData]);
 
-    return sortedPresets;
-}
+    // 检查排序后的预设ID列表是否发生变化
+    const sortedIds = useMemo(() => {
+        return sortedPresets.map((preset) => preset.sha1);
+    }, [sortedPresets]);
 
-export function usePresetViewsData(
-    presets: SquarePresetData[],
-    refresh: boolean
-) {
-    const [presetData, setPresetData] = useState<SquarePresetDataView[]>([]);
+    // 比较当前排序和之前的排序是否一致
+    const orderChanged = useMemo(() => {
+        if (sortedIds.length !== previousSortedIds.length) return true;
 
+        for (let i = 0; i < sortedIds.length; i++) {
+            if (sortedIds[i] !== previousSortedIds[i]) return true;
+        }
+
+        return false;
+    }, [sortedIds, previousSortedIds]);
+
+    // 当排序后的预设数据变化且顺序发生变化时，获取预设视图数据
     useEffect(() => {
-        fetchPresetData(presets).then(setPresetData);
-    }, [presets, refresh]);
+        if (sortedPresets.length > 0 && (orderChanged || refresh)) {
+            fetchPresetData(sortedPresets).then(setPresetData);
+            setPreviousSortedIds(sortedIds);
+        }
+    }, [sortedPresets, orderChanged, sortedIds, refresh]);
 
-    return presetData;
+    // 将预设视图数据附加到排序后的预设数据上
+    const presetsWithViewData = useMemo(() => {
+        return sortedPresets.map((preset) => {
+            const viewData = presetData.find((p) => p.path === preset.rawPath);
+            return {
+                ...preset,
+                meta: viewData || preset.meta,
+            };
+        });
+    }, [sortedPresets, presetData]);
+
+    return {
+        presets: presetsWithViewData,
+        presetDataList: presetData,
+    };
 }
 
 // 通用统计递增方法
