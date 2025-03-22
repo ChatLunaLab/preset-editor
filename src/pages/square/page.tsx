@@ -44,6 +44,7 @@ export default function SquarePage() {
     const [sortOption, setSortOption] = useState('views');
     const [currentPage, setCurrentPage] = useState(1);
     const [refresh, setRefresh] = useState(false);
+    const [viewRefresh, setViewRefresh] = useState(false);
 
     const itemsPerPage = 12;
 
@@ -60,7 +61,7 @@ export default function SquarePage() {
         [presets, currentPage]
     );
 
-    const presetDataList = usePresetViewsData(presets,refresh);
+    const presetDataList = usePresetViewsData(presets, viewRefresh);
 
     const getPaginationRange = () => {
         const start = Math.max(1, currentPage - 1);
@@ -89,9 +90,9 @@ export default function SquarePage() {
 
     // Add effect to refresh when search or sort options change
     useEffect(() => {
-        setRefresh(true);
+        setViewRefresh(true);
         setTimeout(() => {
-            setRefresh(false);
+            setViewRefresh(false);
         }, 10);
     }, [currentData]);
 
