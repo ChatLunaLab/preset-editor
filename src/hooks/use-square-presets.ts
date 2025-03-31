@@ -73,6 +73,15 @@ const fetchPresets = async (): Promise<SquarePresetData[]> => {
     }
 };
 
+// 将数组分块的工具函数
+const chunkArray = <T>(array: T[], size: number): T[][] => {
+    const chunks: T[][] = [];
+    for (let i = 0; i < array.length; i += size) {
+        chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+};
+
 // 获取预设元数据
 export const fetchPresetData = async (
     presets: SquarePresetData[]
@@ -87,18 +96,25 @@ export const fetchPresetData = async (
     }
 
     try {
-        const response = await fetch(`${API_URL}/query_preset_views`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(presetPaths),
-        });
+        const CHUNK_SIZE = 50;
+        const chunks = chunkArray(presetPaths, CHUNK_SIZE);
+        const allData: SquarePresetDataView[] = [];
 
-        if (!response.ok) throw new Error('Failed to fetch preset data');
+        for (const chunk of chunks) {
+            const response = await fetch(`${API_URL}/query_preset_views`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(chunk),
+            });
 
-        const newData = (await response.json()) as SquarePresetDataView[];
-        newData.forEach((data) => cacheManager.presetData.set(data.path, data));
+            if (!response.ok) throw new Error('Failed to fetch preset data');
 
-        return newData.sort((a, b) => b.path.localeCompare(a.path));
+            const chunkData = await response.json() as SquarePresetDataView[];
+            chunkData.forEach((data) => cacheManager.presetData.set(data.path, data));
+            allData.push(...chunkData);
+        }
+
+        return allData.sort((a, b) => b.path.localeCompare(a.path));
     } catch (error) {
         console.error('Error fetching preset data:', error);
         return [];
