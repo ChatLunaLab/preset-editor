@@ -64,9 +64,9 @@ export function MainLayout({ children }: MainLayoutProps) {
     );
 
     return (
-        <div className="flex min-h-screen bg-background">
+        <div className="flex h-screen bg-background">
             {/* Desktop Sidebar */}
-            <div className="hidden md:block md:w-64 border-r bg-card/50">
+            <div className="hidden md:block md:w-64 border-r bg-card/50 h-screen">
                 <Sidebar />
             </div>
 
@@ -87,7 +87,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             </Sheet>
 
             {/* Main Content */}
-            <div className="flex-1 w-full">
+            <div className="flex-1 w-full h-screen overflow-auto">
                 <div className="md:hidden h-16 border-b" />{" "}
                 {/* Mobile header spacing */}
                 {children}
