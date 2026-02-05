@@ -17,10 +17,11 @@ import { CharacterPresetTemplate, RawPreset } from "@/types/preset";
 import { GetNestedType, NestedKeyOf } from "@/types/util";
 import { cn, updateNestedObject } from "@/lib/utils";
 import { Button } from "./ui/button";
-import { Download } from "lucide-react";
+import { Download, Upload } from "lucide-react";
 import { CharacterBasic } from "./character-basic";
 import { CharacterSystem } from "./character-system";
 import { CharacterInput } from "./character-input";
+import { UploadPresetDialog } from "./upload-preset-dialog";
 
 interface CharacterEditorProps {
     presetId: string;
@@ -30,6 +31,7 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
     const preset = usePreset(presetId);
 
     const [activeTab, setActiveTab] = useState("basic");
+    const [uploadOpen, setUploadOpen] = useState(false);
     const tabRefs = useRef<Record<string, React.RefObject<HTMLButtonElement>>>({
         basic: createRef<HTMLButtonElement>(),
         messages: createRef<HTMLButtonElement>(),
@@ -81,20 +83,34 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                         </TabsList>
                     </Tabs>
 
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                            exportPreset(preset);
-                        }}
-                        className="h-8 w-8 p-0"
-                    >
-                        <Download
-                            className={cn(
-                                "h-4 w-4 transition-transform duration-200"
-                            )}
-                        />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setUploadOpen(true)}
+                            className="h-8 w-8 p-0"
+                        >
+                            <Upload
+                                className={cn(
+                                    "h-4 w-4 transition-transform duration-200"
+                                )}
+                            />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                                exportPreset(preset);
+                            }}
+                            className="h-8 w-8 p-0"
+                        >
+                            <Download
+                                className={cn(
+                                    "h-4 w-4 transition-transform duration-200"
+                                )}
+                            />
+                        </Button>
+                    </div>
                 </div>
             </div>
             <div className="flex-1 overflow-auto">
@@ -199,6 +215,11 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                     </AnimatePresence>
                 </div>
             </div>
+            <UploadPresetDialog
+                preset={preset}
+                open={uploadOpen}
+                onOpenChange={setUploadOpen}
+            />
         </div>
     );
 }
