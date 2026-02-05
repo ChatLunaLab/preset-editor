@@ -8,15 +8,16 @@ import { importPreset, usePresets } from "@/hooks/use-preset";
 import { NewPresetDialog } from "@/components/new-preset-dialog";
 import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Import, Upload } from "lucide-react";
+import { UploadGithubPresetDialog } from "@/components/upload-github-preset-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Page() {
     const presets = usePresets();
     const { toast } = useToast();
     const [searchQuery, setSearchQuery] = useState("");
-
+    const [uploadOpen, setUploadOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,17 +55,16 @@ export default function Page() {
                             autoComplete="off"
                         />
                         <div className="flex gap-2">
-                            <a  target="_blank" rel="noopener noreferrer"
-                             href="https://github.com/ChatLunaLab/awesome-chatluna-presets/new/main/presets/chatluna">
-                            <Button variant="secondary" > 
+                            <Button
+                                variant="secondary"
+                                onClick={() => setUploadOpen(true)}
+                            >
                                 <Upload className="h-4 w-4" />
                                 <span className="hidden md:inline">上传预设</span>
                             </Button>
-                            </a>
                             <Button
                                 variant="secondary"
                                 onClick={() => fileInputRef.current?.click()}
-
                             >
                                 <Import className="h-4 w-4 md:mr-0" />
                                 <span className="hidden md:inline">
@@ -84,6 +84,7 @@ export default function Page() {
                 </div>
                 <CharacterList presets={presets} searchQuery={searchQuery} />
             </div>
+            <UploadGithubPresetDialog open={uploadOpen} onOpenChange={setUploadOpen} />
         </MainLayout>
     );
 }
