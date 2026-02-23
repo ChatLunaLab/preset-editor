@@ -35,7 +35,7 @@ export function PresetPreviewDialog({ preset, open, onOpenChange }: PresetPrevie
   const isMobile = useMediaQuery('(max-width: 768px)');
 
   // 转换preset为YAML
-  const presetYaml = yaml.dump(preset);
+  const presetYaml = yaml.dump(preset, { lineWidth: -1 });
 
   // 初始化编辑器
   useEffect(() => {

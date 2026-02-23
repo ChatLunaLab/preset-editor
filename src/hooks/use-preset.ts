@@ -1,87 +1,87 @@
 "use client";
 
 import {
-    CharacterPresetTemplate,
-    isCharacterPresetTemplate,
-    isRawPreset,
-    RawPreset,
+  CharacterPresetTemplate,
+  isCharacterPresetTemplate,
+  isRawPreset,
+  RawPreset,
 } from "@/types/preset";
 import { Dexie } from "dexie";
 import { useLiveQuery } from "dexie-react-hooks";
 import { dump, load } from "js-yaml";
 
 const PRESET_UPLOAD_API_URL =
-    "https://api-chatluna-preset-market.dingyi222666.top/upload_preset";
+  "https://api-chatluna-preset-market.dingyi222666.top/upload_preset";
 const DEFAULT_UPLOAD_TOKEN_ENCODED = "Y2hhdGx1bmE=";
 
 const db = new Dexie("chatluna-preset") as Dexie & {
-    presets: Dexie.Table<PresetModel, string>;
+  presets: Dexie.Table<PresetModel, string>;
 };
 
 db.version(1).stores({
-    presets: "++id, type, lastModified, preset",
+  presets: "++id, type, lastModified, preset",
 });
 
 export interface PresetModel<
-    T extends "main" | "character" = "main" | "character"
+  T extends "main" | "character" = "main" | "character",
 > {
-    id: string;
-    name: string;
-    type: T;
-    lastModified: number;
-    preset: T extends "main" ? RawPreset : CharacterPresetTemplate;
+  id: string;
+  name: string;
+  type: T;
+  lastModified: number;
+  preset: T extends "main" ? RawPreset : CharacterPresetTemplate;
 }
 
 export function usePresets() {
-    return useLiveQuery(() => db.presets.toArray(), [], [] as PresetModel[]);
+  return useLiveQuery(() => db.presets.toArray(), [], [] as PresetModel[]);
 }
 
 export function useRecentPresets() {
-    return useLiveQuery(
-        () => db.presets.orderBy("lastModified").reverse().limit(6).toArray(),
-        [],
-        [] as PresetModel[]
-    );
+  return useLiveQuery(
+    () => db.presets.orderBy("lastModified").reverse().limit(6).toArray(),
+    [],
+    [] as PresetModel[],
+  );
 }
 
 export async function createPreset<
-    T extends "main" | "character" = "main" | "character"
+  T extends "main" | "character" = "main" | "character",
 >(model: Omit<PresetModel<T>, "lastModified" | "id">) {
-    const id = crypto.randomUUID();
-     await db.presets.add({
-        lastModified: Date.now(),
-        ...model,
-        id,
-    });
+  const id = crypto.randomUUID();
+  await db.presets.add({
+    lastModified: Date.now(),
+    ...model,
+    id,
+  });
 
-    return id;
+  return id;
 }
 
 export async function createMainPreset(name: string) {
-    return createPreset({
-        name,
-        type: "main",
-        preset: {
-            keywords: [name],
-            prompts: [
-                {
-                    role: "system",
-                    content:
-                        "You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible.",
-                },
-            ],
+  return createPreset({
+    name,
+    type: "main",
+    preset: {
+      keywords: [name],
+      prompts: [
+        {
+          role: "system",
+          content:
+            "You are ChatGPT, a large language model trained by OpenAI. Answer as concisely as possible.",
         },
-    });
+      ],
+    },
+  });
 }
 
 export async function createCharacterPreset(name: string) {
-    return createPreset({
-        name,
-        type: "character",
-        preset: {
-            name,
-            nick_name: [name],
-            input: ` 当前时间：{time}
+  return createPreset({
+    name,
+    type: "character",
+    preset: {
+      name,
+      nick_name: [name],
+      input: ` 当前时间：{time}
     请基于以下指示生成回复：
 
     1. 严格遵循角色设定进行扮演
@@ -128,7 +128,7 @@ export async function createCharacterPreset(name: string) {
     <message_part>
      <message name='煕' id='0' type='text' sticker='表情包类型'>回复内容（40字内）</message>
     </message_part>`,
-            system: `你现在正在QQ群聊中和群友聊天，你是一个普通的群友。你的网名是煕，请根据以下信息进行角色扮演：
+      system: `你现在正在QQ群聊中和群友聊天，你是一个普通的群友。你的网名是煕，请根据以下信息进行角色扮演：
 
     个人信息 {{
         网名：煕
@@ -244,255 +244,256 @@ export async function createCharacterPreset(name: string) {
              3. 如不需要回复，返回空内容的消息
          }}
      }}`,
-            status: `好感度: '10',
+      status: `好感度: '10',
        心情: "开心",
        状态: "正在和群友探讨人生"
        记忆: "dingyi: 好厉害的群友，懂得那么多哲学道理"
        动作: "拿起手机聊天"`,
-        },
-    });
+    },
+  });
 }
 
 export async function updatePreset(id: string, preset: PresetModel) {
-    return await db.presets.update(id, {
-        ...preset,
-        lastModified: Date.now(),
-    });
+  return await db.presets.update(id, {
+    ...preset,
+    lastModified: Date.now(),
+  });
 }
 
 export async function deletePreset(id: string) {
-    return await db.presets.delete(id);
+  return await db.presets.delete(id);
 }
 
 export function usePreset(id: string) {
-    return useLiveQuery(
-        () => db.presets.get(id),
-        [id],
-        undefined as PresetModel | undefined
-    );
+  return useLiveQuery(
+    () => db.presets.get(id),
+    [id],
+    undefined as PresetModel | undefined,
+  );
 }
 
 export function getPreset(id: string) {
-    return db.presets.get(id);
+  return db.presets.get(id);
 }
 
 export const exportPreset = (preset: PresetModel) => {
-    const blob = new Blob([makeYaml(preset)], {
-        type: "application/yaml;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    const name =
-        preset.type === "character"
-            ? (preset.preset as CharacterPresetTemplate).name
-            : (preset.preset as RawPreset).keywords[0];
-    a.download = `${name}.yml`;
+  const blob = new Blob([makeYaml(preset)], {
+    type: "application/yaml;charset=utf-8",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  const name =
+    preset.type === "character"
+      ? (preset.preset as CharacterPresetTemplate).name
+      : (preset.preset as RawPreset).keywords[0];
+  a.download = `${name}.yml`;
 
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 };
 
-export async function importPreset(preset: string | RawPreset | CharacterPresetTemplate) {
-    let rawPreset = typeof preset === "string" ? load(preset) as RawPreset | CharacterPresetTemplate : preset
+export async function importPreset(
+  preset: string | RawPreset | CharacterPresetTemplate,
+) {
+  let rawPreset =
+    typeof preset === "string"
+      ? (load(preset) as RawPreset | CharacterPresetTemplate)
+      : preset;
 
-    if (isRawPreset(rawPreset)) {
-        rawPreset = rawPreset as RawPreset;
-        return await createPreset({
-            name: rawPreset.keywords[0],
-            type: "main",
-            preset: rawPreset,
-        });
-    }
+  if (isRawPreset(rawPreset)) {
+    rawPreset = rawPreset as RawPreset;
+    return await createPreset({
+      name: rawPreset.keywords[0],
+      type: "main",
+      preset: rawPreset,
+    });
+  }
 
-    if (isCharacterPresetTemplate(rawPreset)) {
-        rawPreset = rawPreset as CharacterPresetTemplate;
-        return await createPreset({
-            name: rawPreset.name,
-            type: "character",
-            preset: rawPreset,
-        });
-    }
+  if (isCharacterPresetTemplate(rawPreset)) {
+    rawPreset = rawPreset as CharacterPresetTemplate;
+    return await createPreset({
+      name: rawPreset.name,
+      type: "character",
+      preset: rawPreset,
+    });
+  }
 
-    throw new Error("Invalid preset");
+  throw new Error("Invalid preset");
 }
 
 export function makeYaml(preset: PresetModel) {
-    return dump(preset.preset);
+  return dump(preset.preset, { lineWidth: -1 });
 }
 
 export interface UploadPresetOptions {
-    token: string;
-    fileName?: string;
+  token: string;
+  fileName?: string;
 }
 
 export interface UploadPresetResult {
-    pull_request_url: string;
-    branch: string;
-    path: string;
+  pull_request_url: string;
+  branch: string;
+  path: string;
 }
 
 export function getPresetDisplayName(preset: PresetModel) {
-    if (preset.type === "character") {
-        return (preset.preset as CharacterPresetTemplate).name;
-    }
-    return (preset.preset as RawPreset).keywords?.[0] ?? preset.name;
+  if (preset.type === "character") {
+    return (preset.preset as CharacterPresetTemplate).name;
+  }
+  return (preset.preset as RawPreset).keywords?.[0] ?? preset.name;
 }
 
 export function getPresetDefaultFileName(name: string) {
-    return buildUploadFileName(name);
+  return buildUploadFileName(name);
 }
 
 export function getPresetUploadToken() {
-    return decodeBase64(DEFAULT_UPLOAD_TOKEN_ENCODED);
+  return decodeBase64(DEFAULT_UPLOAD_TOKEN_ENCODED);
 }
 
 export async function uploadPreset(
-    preset: PresetModel,
-    options: UploadPresetOptions
+  preset: PresetModel,
+  options: UploadPresetOptions,
 ): Promise<UploadPresetResult> {
-    const name = getPresetDisplayName(preset);
-    const fileName = buildUploadFileName(name, options.fileName);
-    const content = await gzipBase64(makeYaml(preset));
+  const name = getPresetDisplayName(preset);
+  const fileName = buildUploadFileName(name, options.fileName);
+  const content = await gzipBase64(makeYaml(preset));
 
-    const payload = {
-        file_name: fileName,
-        name,
-        type: preset.type,
-        content,
-    };
+  const payload = {
+    file_name: fileName,
+    name,
+    type: preset.type,
+    content,
+  };
 
-    const timestamp = Date.now().toString();
-    const signature = await signUploadPayload(
-        options.token,
-        timestamp,
-        payload
-    );
+  const timestamp = Date.now().toString();
+  const signature = await signUploadPayload(options.token, timestamp, payload);
 
-    const response = await fetch(PRESET_UPLOAD_API_URL, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-Timestamp": timestamp,
-            "X-Signature": signature,
-        },
-        body: JSON.stringify(payload),
-    });
+  const response = await fetch(PRESET_UPLOAD_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Timestamp": timestamp,
+      "X-Signature": signature,
+    },
+    body: JSON.stringify(payload),
+  });
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Upload failed");
-    }
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "Upload failed");
+  }
 
-    return (await response.json()) as UploadPresetResult;
+  return (await response.json()) as UploadPresetResult;
 }
 
 function buildUploadFileName(name: string, custom?: string) {
-    const baseName = (custom ?? slugifyName(name)).trim();
-    const withExtension = /\.[a-z0-9]+$/i.test(baseName)
-        ? baseName
-        : `${baseName}.yml`;
-    if (!/^[\w.-]+\.(yml|yaml)$/i.test(withExtension)) {
-        throw new Error("文件名仅支持字母、数字、下划线、点、短横线和 yml/yaml 后缀");
-    }
-    return withExtension;
+  const baseName = (custom ?? slugifyName(name)).trim();
+  const withExtension = /\.[a-z0-9]+$/i.test(baseName)
+    ? baseName
+    : `${baseName}.yml`;
+  if (!/^[\w.-]+\.(yml|yaml)$/i.test(withExtension)) {
+    throw new Error(
+      "文件名仅支持字母、数字、下划线、点、短横线和 yml/yaml 后缀",
+    );
+  }
+  return withExtension;
 }
 
 function slugifyName(value: string) {
-    const slug = value
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "")
-        .slice(0, 40);
-    return slug || "preset";
+  const slug = value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+  return slug || "preset";
 }
 
 async function gzipBase64(content: string) {
-    if (typeof CompressionStream === "undefined") {
-        throw new Error("当前浏览器不支持 gzip 上传");
-    }
+  if (typeof CompressionStream === "undefined") {
+    throw new Error("当前浏览器不支持 gzip 上传");
+  }
 
-    const stream = new Blob([content]).stream();
-    const compressed = stream.pipeThrough(new CompressionStream("gzip"));
-    const buffer = await new Response(compressed).arrayBuffer();
-    const bytes = new Uint8Array(buffer);
-    let binary = "";
-    for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
-    }
-    return btoa(binary);
+  const stream = new Blob([content]).stream();
+  const compressed = stream.pipeThrough(new CompressionStream("gzip"));
+  const buffer = await new Response(compressed).arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
 }
 
 async function signUploadPayload(
-    token: string,
-    timestamp: string,
-    payload: {
-        file_name: string;
-        name: string;
-        type: "main" | "character";
-        content: string;
-    }
+  token: string,
+  timestamp: string,
+  payload: {
+    file_name: string;
+    name: string;
+    type: "main" | "character";
+    content: string;
+  },
 ) {
-    if (!token.trim()) {
-        throw new Error("上传密钥不能为空");
-    }
+  if (!token.trim()) {
+    throw new Error("上传密钥不能为空");
+  }
 
-    if (!crypto?.subtle) {
-        throw new Error("当前环境不支持加密上传");
-    }
+  if (!crypto?.subtle) {
+    throw new Error("当前环境不支持加密上传");
+  }
 
-    const payloadHash = await sha256Hex(
-        [payload.file_name, payload.name, payload.type, payload.content].join(
-            "\n"
-        )
-    );
-    const base = `${timestamp}.${payload.file_name}.${payload.name}.${payload.type}.${payloadHash}`;
-    const signature = await signHmac(token, base);
-    return base64UrlEncode(signature);
+  const payloadHash = await sha256Hex(
+    [payload.file_name, payload.name, payload.type, payload.content].join("\n"),
+  );
+  const base = `${timestamp}.${payload.file_name}.${payload.name}.${payload.type}.${payloadHash}`;
+  const signature = await signHmac(token, base);
+  return base64UrlEncode(signature);
 }
 
 async function sha256Hex(value: string) {
-    const buf = await crypto.subtle.digest(
-        "SHA-256",
-        new TextEncoder().encode(value)
-    );
-    const bytes = new Uint8Array(buf);
-    let hex = "";
-    for (let i = 0; i < bytes.length; i++) {
-        hex += bytes[i].toString(16).padStart(2, "0");
-    }
-    return hex;
+  const buf = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(value),
+  );
+  const bytes = new Uint8Array(buf);
+  let hex = "";
+  for (let i = 0; i < bytes.length; i++) {
+    hex += bytes[i].toString(16).padStart(2, "0");
+  }
+  return hex;
 }
 
 async function signHmac(secret: string, message: string) {
-    const key = await crypto.subtle.importKey(
-        "raw",
-        new TextEncoder().encode(secret),
-        { name: "HMAC", hash: "SHA-256" },
-        false,
-        ["sign"]
-    );
-    const signature = await crypto.subtle.sign(
-        "HMAC",
-        key,
-        new TextEncoder().encode(message)
-    );
-    return new Uint8Array(signature);
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(message),
+  );
+  return new Uint8Array(signature);
 }
 
 function base64UrlEncode(data: Uint8Array) {
-    let bin = "";
-    for (let i = 0; i < data.length; i++) {
-        bin += String.fromCharCode(data[i]);
-    }
-    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  let bin = "";
+  for (let i = 0; i < data.length; i++) {
+    bin += String.fromCharCode(data[i]);
+  }
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
 function decodeBase64(value: string) {
-    try {
-        return atob(value);
-    } catch {
-        return "";
-    }
+  try {
+    return atob(value);
+  } catch {
+    return "";
+  }
 }
