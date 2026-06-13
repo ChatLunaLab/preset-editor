@@ -179,4 +179,14 @@ export interface CharacterPresetTemplate {
     system: string;
     mute_keyword?: string[];
     path?: string;
+    bot_id?: string;
+    owner_id?: string;
+    description?: string;
+    personality?: string;
+    hobbies?: string;
+    dialogue_examples?: string;
+    chat_style?: string;
+    chat_behavior?: string;
+    relationship?: string;
+    stickers?: string;
 }

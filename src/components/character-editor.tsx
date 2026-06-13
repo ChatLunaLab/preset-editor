@@ -22,6 +22,8 @@ import { CharacterBasic } from "./character-basic";
 import { CharacterSystem } from "./character-system";
 import { CharacterInput } from "./character-input";
 import { UploadPresetDialog } from "./upload-preset-dialog";
+import { CharacterDetails } from "./character-details";
+import { CharacterExport } from "./character-export";
 
 interface CharacterEditorProps {
     presetId: string;
@@ -109,7 +111,7 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                 </div>
             </div>
             <div className="flex-1 overflow-auto">
-                <div className="container py-6 max-w-4xl mx-auto">
+                <div className="container py-6 max-w-7xl mx-auto">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={activeTab}
@@ -181,6 +183,20 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                                 />
                             )}
 
+                            {(activeTab === "details" && preset.type === 'character') && (
+                                <CharacterDetails
+                                    updatePreset={(key, value) =>
+                                        updatePreset<CharacterPresetTemplate>(
+                                            key,
+                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                            value as any
+                                        )
+                                    }
+                                    preset={preset.preset as CharacterPresetTemplate}
+                                    presetId={preset.id}
+                                />
+                            )}
+
                             {(activeTab === "system" && preset.type === 'character') && (
                                 <CharacterSystem
                                     updatePreset={(key, value) =>
@@ -205,6 +221,10 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                                     }
                                     preset={preset.preset as CharacterPresetTemplate}
                                 />
+                            )}
+
+                            {(activeTab === "export" && preset.type === 'character') && (
+                                <CharacterExport preset={preset} />
                             )}
                         </motion.div>
                     </AnimatePresence>
