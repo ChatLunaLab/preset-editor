@@ -9,6 +9,7 @@ import {
 import { Dexie } from "dexie";
 import { useLiveQuery } from "dexie-react-hooks";
 import { dump, load } from "js-yaml";
+import { toast } from "./use-toast";
 
 const PRESET_UPLOAD_API_URL =
   "https://api-chatluna-preset-market.dingyi222666.top/upload_preset";
@@ -275,6 +276,78 @@ export function usePreset(id: string) {
 export function getPreset(id: string) {
   return db.presets.get(id);
 }
+
+const FALLBACK_TEMPLATE = `# 本文件最后更新时间：2026-04-03
+# 
+# 使用须知
+# 
+# 本预设依赖以下插件，请自行安装，不要忘记在修改后点击右上角的“重载配置”按钮：
+# - chatluna-long-memory
+#   - 插件用途：提供长期记忆功能
+#   - 配置说明：
+#     - 将所有“长期记忆引擎配置”改为“Basic”，“启用的记忆检索层”只勾选“群组层”
+# - chatluna-forward-msg
+#   - 插件用途：可选，提供合并转发记录读取、发送功能
+#   - 配置说明：
+#     - 在“协议选择”中启用“NapCat OneBot”或“LLBot OneBot”中你使用的协议
+#     - 在“图片描述服务”中选择一个多模态模型
+#     - 在 chatluna 插件的“对话行为选项”中启用：attachForwardMsgIdToContext
+#     - 在 chatluna-character 插件对应会话配置的“上下文”中启用：enableMessageId
+# - chatluna-plugin-common
+#   - 插件用途：提供一些通用的工具，包括本预设中用到的群管工具
+#   - 配置说明：
+#     - 只启用“群管插件”，其他选项全部关闭
+#     - 在“群管插件配置”中配置好“允许使用群管功能的成员 ID 列表”（可以要求 Bot 使用群管功能的人）和“允许使用群管功能的群 ID 白名单”
+# - chatluna-toolbox
+#   - 插件用途：提供戳一戳、贴表情、撤回消息等功能
+#   - 配置说明：
+#     - 在“原生工具”中启用“NapCat OneBot”或“LLBot OneBot”中你使用的协议
+#     - 在“XML 工具”中启用除了“enableBanXmlTool”之外的全部选项
+#     - 其他选项全部关闭
+# - chatluna-storage-service
+#   - 插件用途：提供文件存储服务，防止 QQ 图床链接过期
+#   - 配置说明：
+#     - 将“存储后端类型”改为“本地文件存储”
+#     - 将“Koishi 在公网或者局域网中的路径”改为你的环境中实际的路径，确保此路径可以被你的 Napcat 或 LLBot 正常访问。
+# 
+# 作者的话：
+# 感谢你使用了卢恩伪装插件预设模板！如有问题，敬请优先查询 ChatLuna 文档！
+
+name: CHARACTER（工具调用）
+
+nick_name:
+    - CHARACTER
+    - '@CHARACTER'
+
+input: |
+    # 当前时间
+    {time}
+
+    # 触发原因
+    {trigger_reason}
+    
+    # 请基于以下指示生成回复
+    - 严格遵循角色设定进行扮演
+    - 综合分析上下文，结合角色知识和状态生成回复
+    
+    # 最近消息
+    {history_new}
+    
+    # 最后消息
+    {history_last}
+    
+    # 当前状态
+    <status>
+    {status}
+    </status>
+
+    # 长期记忆
+    {long_memory('guild')}
+    
+    # 提示
+    - 消息最开头的“CHARACTER”（若存在）只是一个对你的称呼，并不与后面的词构成组合关系，如：“CHARACTER硬盘怎么扩容”实际上是在问“硬盘怎么扩容？”
+    - 并非每一条消息都需要回复
+    - 有时候图片没能附加在你的上下文中，如undefined，`;
 
 export function compilePresetForExport(preset: PresetModel, modelConfig: { apiUrl: string; token: string; selectedModel: string } | null) {
   if (preset.type !== "character") {

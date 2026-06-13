@@ -180,6 +180,7 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
                                         )
                                     }
                                     preset={preset.preset as CharacterPresetTemplate}
+                                    presetId={preset.id}
                                 />
                             )}
 
