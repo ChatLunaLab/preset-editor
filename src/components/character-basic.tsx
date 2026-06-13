@@ -73,7 +73,6 @@ export function CharacterBasic({
                                         value={preset.name}
                                         placeholder="预设名称"
                                         onChange={(e) => {
-
                                             updatePreset?.(
                                                 "name",
                                                 e.target.value
@@ -113,7 +112,6 @@ export function CharacterBasic({
                                         }
                                     />
                                 </div>
-                               
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="description">
@@ -137,10 +135,6 @@ export function CharacterBasic({
                     </div>
                 </div>
             </Card>
-
-
-
-
         </div>
     );
 }

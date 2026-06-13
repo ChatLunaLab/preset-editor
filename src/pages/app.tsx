@@ -5,6 +5,7 @@
 import { CharacterList } from "@/components/character-list";
 import { importPreset, usePresets } from "@/hooks/use-preset";
 import { NewPresetDialog } from "@/components/new-preset-dialog";
+import { ModelConfigDialog } from "@/components/model-config-dialog";
 import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -75,6 +76,7 @@ export default function Page() {
                                 onChange={handleImportData}
                             />
                             <NewPresetDialog />
+                            <ModelConfigDialog />
                         </div>
                     </div>
                 </div>
