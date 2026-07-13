@@ -23,20 +23,17 @@ jobs:
             url: ${{ steps.deployment.outputs.page_url }}
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v5
               with:
                   fetch-depth: 0
-            - uses: actions/setup-node@v4
+            - uses: actions/setup-node@v5
               with:
-                  node-version: 20
+                  node-version: 22
 
             - name: Enable corepack
               run: corepack enable
 
-            - name: Activate latest Yarn
-              run: yarn set version stable
-
-            - run: yarn install
+            - run: yarn install --immutable
               name: Install dependencies
 
             - name: Build
