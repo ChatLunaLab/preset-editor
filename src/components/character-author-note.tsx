@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { RawPreset } from "@/types/preset";
 import { GetNestedType, NestedKeyOf } from "@/types/util";
 import { Button } from "./ui/button";
@@ -15,6 +14,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "./ui/select";
+import { TemplateEditor } from "./template-editor";
 
 interface CharacterAuthorNoteProps {
     updatePreset?: <K extends NestedKeyOf<RawPreset>>(
@@ -71,17 +71,18 @@ export function CharacterAuthorNote({
                     <div className="overflow-hidden">
                         <CardContent className="space-y-4 pt-6">
                             <div className="space-y-2">
-                                <Label htmlFor="description">注释内容</Label>
-                                <Textarea
-                                    id="description"
+                                <Label htmlFor="authors-note-content">注释内容</Label>
+                                <TemplateEditor
+                                    id="authors-note-content"
                                     placeholder="注释的内容"
-                                    className="min-h-[100px] rounded-lg"
-                                    rows={5}
+                                    context="author-note"
+                                    minRows={5}
+                                    ariaLabel="作者注释内容"
                                     value={preset.authors_note?.content || ""}
-                                    onChange={(e) =>
+                                    onChange={(value) =>
                                         updatePreset?.(
                                             "authors_note.content",
-                                            e.target.value
+                                            value
                                         )
                                     }
                                 />

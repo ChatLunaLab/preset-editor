@@ -14,8 +14,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "./ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { TemplateEditor } from "@/components/template-editor";
 
 interface CharacterMessagesFormProps {
     updatePreset?: <K extends NestedKeyOf<RawPreset>>(
@@ -145,17 +145,22 @@ export function CharacterMessagesForm({
                                         </Select>
                                     </div>
                                     <div className="space-y-2 flex-grow w-full">
-                                        <Label>提示词内容</Label>
-                                        <Textarea
-                                            className="mt-4 min-h-[60px]"
-                                            rows={isMobile ? 30 : 5}
+                                        <Label htmlFor={`prompt-content-${index}`}>
+                                            提示词内容
+                                        </Label>
+                                        <TemplateEditor
+                                            id={`prompt-content-${index}`}
+                                            className="mt-4"
+                                            minRows={isMobile ? 12 : 5}
+                                            context="prompt"
+                                            ariaLabel={`第 ${index + 1} 条提示词内容`}
                                             value={message.content}
-                                            onChange={(e) => {
-                                                updatePreset?.(
-                                                    `prompts.${index}.content`,
-                                                    e.target.value
-                                                );
-                                             }}
+                                            onChange={(value) => {
+                                                 updatePreset?.(
+                                                     `prompts.${index}.content`,
+                                                     value
+                                                 );
+                                              }}
                                         />
                                     </div>
                                     <Button

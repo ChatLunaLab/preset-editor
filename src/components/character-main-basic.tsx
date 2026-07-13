@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "./ui/switch";
 import { RawPreset } from "@/types/preset";
 import { GetNestedType, NestedKeyOf } from "@/types/util";
@@ -9,6 +8,7 @@ import { Button } from "./ui/button";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { TemplateEditor } from "./template-editor";
 
 interface CharacterBasicFormProps {
     updatePreset?: <K extends NestedKeyOf<RawPreset>>(
@@ -101,19 +101,20 @@ export function CharacterMainBasic({
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="description">
+                                <Label htmlFor="format-user-prompt">
                                     用户格式化输入
                                 </Label>
-                                <Textarea
-                                    id="description"
+                                <TemplateEditor
+                                    id="format-user-prompt"
                                     placeholder="用户的格式化输入"
-                                    className="min-h-[100px] rounded-lg"
-                                    rows={5}
+                                    context="format-user"
+                                    minRows={5}
+                                    ariaLabel="用户格式化输入"
                                     value={preset.format_user_prompt}
-                                    onChange={(e) =>
+                                    onChange={(value) =>
                                         updatePreset?.(
                                             "format_user_prompt",
-                                            e.target.value
+                                            value
                                         )
                                     }
                                 />
@@ -271,19 +272,20 @@ export function CharacterMainBasic({
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="description">
+                                <Label htmlFor="knowledge-prompt">
                                     知识库检索预设
                                 </Label>
-                                <Textarea
-                                    rows={5}
-                                    id="description"
+                                <TemplateEditor
+                                    id="knowledge-prompt"
                                     placeholder="知识库的预设"
-                                    className="min-h-[100px] rounded-lg"
+                                    context="knowledge"
+                                    minRows={5}
+                                    ariaLabel="知识库检索预设"
                                     value={preset.knowledge?.prompt}
-                                    onChange={(e) =>
+                                    onChange={(value) =>
                                         updatePreset?.(
                                             "knowledge.prompt",
-                                            e.target.value
+                                            value
                                         )
                                     }
                                 />
@@ -325,37 +327,37 @@ export function CharacterMainBasic({
                                     <Label htmlFor="long_memory_prompt">
                                         长期记忆检索 Prompt
                                     </Label>
-                                    <Textarea
+                                    <TemplateEditor
                                         id="long_memory_prompt"
-
-                                        rows={5}
-                                        className="rounded-lg"
+                                        context="memory"
+                                        minRows={5}
+                                        ariaLabel="长期记忆检索 Prompt"
                                         value={preset.config?.longMemoryPrompt}
-                                        onChange={(e) =>
+                                        onChange={(value) =>
                                             updatePreset?.(
                                                 "config.longMemoryPrompt",
-                                                e.target.value
+                                                value
                                             )
                                         }
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="height">
+                                    <Label htmlFor="long_memory_new_question_prompt">
                                         长期记忆新问题 Prompt
                                     </Label>
-                                    <Textarea
-                                        id="height"
-
-                                        rows={5}
-                                        className="rounded-lg"
+                                    <TemplateEditor
+                                        id="long_memory_new_question_prompt"
+                                        context="memory"
+                                        minRows={5}
+                                        ariaLabel="长期记忆新问题 Prompt"
                                         value={
                                             preset.config
                                                 ?.longMemoryNewQuestionPrompt
                                         }
-                                        onChange={(e) =>
+                                        onChange={(value) =>
                                             updatePreset?.(
                                                 "config.longMemoryNewQuestionPrompt",
-                                                e.target.value
+                                                value
                                             )
                                         }
                                     />
@@ -364,38 +366,39 @@ export function CharacterMainBasic({
                                     <Label htmlFor="long_term_memory_extraction_prompt">
                                         长期记忆提取 Prompt
                                     </Label>
-                                    <Textarea
+                                    <TemplateEditor
                                         id="long_term_memory_extraction_prompt"
-
-                                        rows={5}
+                                        context="memory"
+                                        minRows={5}
+                                        ariaLabel="长期记忆提取 Prompt"
                                         value={
                                             preset.config
                                                 ?.longMemoryExtractPrompt
                                         }
-                                        className="rounded-lg"
-                                        onChange={(e) =>
+                                        onChange={(value) =>
                                             updatePreset?.(
                                                 "config.longMemoryExtractPrompt",
-                                                e.target.value
+                                                value
                                             )
                                         }
                                     />
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="appearance">
+                                <Label htmlFor="lore_books_prompt">
                                     世界书检索 Prompt
                                 </Label>
-                                <Textarea
-                                    id="appearance"
-                                    rows={5}
+                                <TemplateEditor
+                                    id="lore_books_prompt"
                                     placeholder="世界书检索 Prompt"
+                                    context="memory"
+                                    minRows={5}
+                                    ariaLabel="世界书检索 Prompt"
                                     value={preset.config?.loreBooksPrompt}
-                                    className="min-h-[100px] rounded-lg"
-                                    onChange={(e) =>
+                                    onChange={(value) =>
                                         updatePreset?.(
                                             "config.loreBooksPrompt",
-                                            e.target.value
+                                            value
                                         )
                                     }
                                 />

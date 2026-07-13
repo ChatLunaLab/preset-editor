@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "./ui/switch";
 import {
     isWorldLoreConfig,
@@ -23,6 +22,7 @@ import {
     SelectValue,
 } from "./ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import { TemplateEditor } from "./template-editor";
 
 interface CharacterWorldLoreProps {
     updatePreset?: <K extends NestedKeyOf<RawPreset>>(
@@ -179,18 +179,23 @@ export function CharacterWorldLore({
                     </div>
 
                     <div className="space-y-2">
-                        <Label>条目内容</Label>
-                        <Textarea
+                        <Label htmlFor={`world-lore-content-${index}`}>
+                            条目内容
+                        </Label>
+                        <TemplateEditor
+                            id={`world-lore-content-${index}`}
                             className="mt-4"
                             placeholder="输入内容"
                             value={lore.content}
-                            onChange={(e) => {
+                            context="world-lore"
+                            minRows={6}
+                            ariaLabel={`世界书条目 ${index + 1} 内容`}
+                            onChange={(value) => {
                                 updatePreset?.(
                                     `world_lores.${index}.content`,
-                                    e.target.value.toString()
+                                    value
                                 );
                             }}
-                            rows={6}
                         />
                     </div>
 
