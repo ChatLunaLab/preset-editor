@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Download, Eye, Pencil } from "lucide-react"
-import { Separator } from "@/components/ui/separator";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router";
 import { downloadPreset, incrementDownloads, useSquarePresetForNetwork } from "@/hooks/use-square-presets"
@@ -18,7 +17,7 @@ import { Skeleton } from './ui/skeleton';
 import { PresetPreviewDialog } from "./preset-preview-dialog";
 import { Loader2 } from "lucide-react"
 import { importPreset } from '@/hooks/use-preset';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface PresetDetailsProps {
   squarePreset: SquarePresetData
@@ -29,57 +28,60 @@ export function PresetDetails({ squarePreset }: PresetDetailsProps) {
   const navigate = useNavigate();
   const [open, setOpen] = React.useState(false);
   const [isEditLoading, setIsEditLoading] = React.useState(false);
-  const toaster = useToast()
 
   const preset = useSquarePresetForNetwork(squarePreset)
 
 
   return (
-    <div className="container py-6 px-6 sm:px-12">
-      <div className="mb-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="size-2" />
-        </Button>
-      </div>
-      <div className="flex flex-col sm:flex-row  items-start justify-between gap-6">
-        <div className="space-y-1 flex-1 flex items-center">
-          <h1 className="text-2xl font-bold">{squarePreset.keywords?.[0] ?? squarePreset.name}</h1>
-          <div className="flex items-center gap-2 text-muted-foreground ml-3">
+    <div className="container px-4 py-6 sm:px-6 lg:px-8">
+      <div className="sticky top-0 z-20 -mx-4 mb-6 border-b bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/85 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="shrink-0"
+              aria-label="返回上一页"
+              title="返回上一页"
+              onClick={() => navigate(-1)}
+            >
+              <ArrowLeft className="size-5" />
+            </Button>
+            <h1 className="min-w-0 truncate text-2xl font-bold">
+              {squarePreset.keywords?.[0] ?? squarePreset.name}
+            </h1>
             <Badge variant="secondary">
               {squarePreset.type === 'main' ? "主插件预设" : "伪装预设"}
             </Badge>
           </div>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-            <Eye className="h-4 w-4 mr-2" />
-            预览
-          </Button>
-          <Button variant="outline" onClick={() => {
-            downloadPreset(squarePreset)
-            incrementDownloads(squarePreset.rawPath)
-          }} size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            下载
-          </Button>
-          <Button size="sm" disabled={isEditLoading} onClick={() => {
-            setIsEditLoading(true);
-            importPreset(preset).then((id) => {
-              setIsEditLoading(false)
-              toaster.toast({
-                title: "导入成功",
-                description: `已成功导入预设: ${squarePreset.name}。可以开始编辑了！`,
-              })
-              navigate(`/character/${id}`);
-            });
-          }}>
-            {isEditLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Pencil className="h-4 w-4 mr-2" />}
-            {isEditLoading ? "导入中" : "编辑"}
-          </Button>
+          <div className="flex shrink-0 gap-2">
+            <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+              <Eye className="h-4 w-4 mr-2" />
+              预览
+            </Button>
+            <Button variant="outline" onClick={() => {
+              downloadPreset(squarePreset)
+              incrementDownloads(squarePreset.rawPath)
+            }} size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              下载
+            </Button>
+            <Button size="sm" disabled={isEditLoading} onClick={() => {
+              setIsEditLoading(true);
+              importPreset(preset).then((id) => {
+                setIsEditLoading(false)
+                toast.success("导入成功", {
+                  description: `已成功导入预设: ${squarePreset.name}。可以开始编辑了！`,
+                })
+                navigate(`/character/${id}`);
+              });
+            }}>
+              {isEditLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Pencil className="h-4 w-4 mr-2" />}
+              {isEditLoading ? "导入中" : "编辑"}
+            </Button>
+          </div>
         </div>
       </div>
-
-      <Separator className="my-6" />
 
       {!preset && <Loading />}
       {preset && isRawPreset(preset) && MainPresetDetails(preset, squarePreset)}
@@ -163,13 +165,13 @@ export function CharacterPresetDetails(preset: CharacterPresetTemplate, squarePr
       </Card>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between p-6">
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>角色提示词</CardTitle>
 
         </CardHeader>
 
 
-        <CardContent className="space-y-4 p-6 pt-0">
+        <CardContent className="space-y-4">
           <div className="space-y-1">
             <p className="font-medium">系统提示词</p>
             <p className="text-sm whitespace-pre-wrap">{preset.system}</p>
@@ -209,8 +211,8 @@ function PresetMessages({ preset }: PresetMessagesProps) {
   const [open, setOpen] = React.useState(true)
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between p-6">
+    <Card className="gap-0">
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>角色提示词</CardTitle>
         <Button variant="ghost" size="icon" onClick={() => setOpen(!open)} className="h-8 w-8 p-0">
           <ChevronDown className={cn("h-4 w-4", open ? "rotate-180" : "")} />
@@ -226,7 +228,7 @@ function PresetMessages({ preset }: PresetMessagesProps) {
       >
         <div className="overflow-hidden">
 
-          <CardContent className="space-y-4 p-6 pt-0">
+          <CardContent className="space-y-4 pt-6">
             {preset.prompts.map((message, index) => (
               <div
                 key={index}

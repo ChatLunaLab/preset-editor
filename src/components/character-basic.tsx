@@ -37,8 +37,8 @@ export function CharacterBasic({
 
     return (
         <div className="grid gap-6">
-            <Card className="rounded-xl">
-                <CardHeader className="flex flex-row items-center justify-between p-6">
+            <Card className="gap-0 rounded-xl">
+                <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>基本信息</CardTitle>
                     <Button
                         variant="ghost"
@@ -63,7 +63,7 @@ export function CharacterBasic({
                     )}
                 >
                     <div className="overflow-hidden">
-                        <CardContent className="space-y-4 p-6 pt-0">
+                        <CardContent className="space-y-4 pt-6">
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
                                     <Label htmlFor="name">预设名称</Label>

@@ -8,9 +8,11 @@ export interface SquarePresetData {
     tags?: string[];
     sha1: string;
     relativePath: string;
-    type: "main" | "character";
-    meta?: SquarePresetDataView
+    type: 'main' | 'character';
+    meta?: SquarePresetDataView;
 }
+
+export type SquareStatsPeriod = 'all' | 'day' | 'week' | 'month';
 
 export interface SquarePresetDataView {
     path: string;

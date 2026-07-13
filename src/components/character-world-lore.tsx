@@ -22,8 +22,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "./ui/select";
-import { TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
-import { Tooltip } from "@radix-ui/react-tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 interface CharacterWorldLoreProps {
     updatePreset?: <K extends NestedKeyOf<RawPreset>>(
@@ -79,8 +78,8 @@ export function CharacterWorldLore({
             firstKeyword instanceof RegExp ? firstKeyword.source : firstKeyword;
 
         return (
-            <Card key={index} className="mb-4 px-2 mx-4">
-                <CardHeader className="flex flex-row items-center justify-between p-4">
+            <Card key={index} className="mx-4 mb-4 gap-4 py-4">
+                <CardHeader className="flex flex-row items-center justify-between px-4">
                     <CardTitle className="text-lg">
                         {title || "未命名条目"}
                     </CardTitle>
@@ -93,7 +92,7 @@ export function CharacterWorldLore({
                         <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 px-4">
                     <div className="space-y-2">
                         <Label>触发关键词</Label>
                         <div className="space-y-2 mt-4">

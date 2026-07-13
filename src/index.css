@@ -1,9 +1,7 @@
 @import "tailwindcss";
-
+@import "tw-animate-css";
 
 @variant dark (&:is(.dark *));
-
-@plugin "tailwindcss-animate";
 
 @theme {
   --color-background: hsl(var(--background));

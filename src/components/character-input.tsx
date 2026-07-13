@@ -37,8 +37,8 @@ export function CharacterInput({
 
     return (
         <div className="grid gap-6 sm:grid-cols-1">
-            <Card className="rounded-xl">
-                <CardHeader className="flex flex-row items-center justify-between p-6">
+            <Card className="gap-0 rounded-xl">
+                <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>输入提示词</CardTitle>
                     <div className="flex gap-3">
                         <Button
@@ -76,7 +76,7 @@ export function CharacterInput({
                     )}
                 >
                     <div className="overflow-hidden">
-                        <CardContent className="space-y-4 p-6 pt-0">
+                        <CardContent className="space-y-4 pt-6">
                             <div className="space-y-2">
                                 <Label htmlFor="description">格式化输入提示词内容</Label>
                                 <Textarea

@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
     getPresetDefaultFileName,
     getPresetDisplayName,
@@ -55,37 +55,25 @@ function buildPresetModel(preset: RawPreset | CharacterPresetTemplate): PresetMo
     throw new Error("Invalid preset");
 }
 
-export function UploadGithubPresetDialog({
-    open,
+function UploadGithubPresetDialogContent({
     onOpenChange,
-}: UploadGithubPresetDialogProps) {
-    const { toast } = useToast();
+    onUploadSuccess,
+}: {
+    onOpenChange: (open: boolean) => void;
+    onUploadSuccess: (url: string) => void;
+}) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [preset, setPreset] = useState<PresetModel | null>(null);
-    const [fileName, setFileName] = useState("");
-    const [successUrl, setSuccessUrl] = useState("");
-    const [successOpen, setSuccessOpen] = useState(false);
+    const [fileNameOverride, setFileNameOverride] = useState<string | null>(null);
 
     const presetName = useMemo(() => (preset ? getPresetDisplayName(preset) : ""), [preset]);
-
-    useEffect(() => {
-        if (!open) {
-            return;
-        }
-        setPreset(null);
-        setFileName("");
-        setSuccessOpen(false);
-        setSuccessUrl("");
-        setIsDragging(false);
-    }, [open]);
-
-    useEffect(() => {
-        if (preset) {
-            setFileName(getPresetDefaultFileName(presetName));
-        }
-    }, [preset, presetName]);
+    const defaultFileName = useMemo(
+        () => (preset ? getPresetDefaultFileName(presetName) : ""),
+        [preset, presetName],
+    );
+    const fileName = fileNameOverride ?? defaultFileName;
 
     const parsePresetContent = (content: string) => {
         const raw = load(content) as RawPreset | CharacterPresetTemplate;
@@ -97,10 +85,8 @@ export function UploadGithubPresetDialog({
 
     const handleFile = async (file: File) => {
         if (!isAllowedFile(file)) {
-            toast({
-                title: "上传失败",
+            toast.error("上传失败", {
                 description: "仅支持 .yml 或 .yaml 文件",
-                variant: "destructive",
             });
             return;
         }
@@ -109,12 +95,11 @@ export function UploadGithubPresetDialog({
             const content = await file.text();
             const rawPreset = parsePresetContent(content);
             const model = buildPresetModel(rawPreset);
+            setFileNameOverride(null);
             setPreset(model);
         } catch (error) {
-            toast({
-                title: "上传失败",
+            toast.error("上传失败", {
                 description: "文件格式不正确，无法解析预设",
-                variant: "destructive",
             });
             console.error(error);
         }
@@ -126,10 +111,8 @@ export function UploadGithubPresetDialog({
         }
 
         if (files.length > 1) {
-            toast({
-                title: "上传失败",
+            toast.error("上传失败", {
                 description: "一次只能上传一个文件",
-                variant: "destructive",
             });
             return;
         }
@@ -151,19 +134,15 @@ export function UploadGithubPresetDialog({
                 fileName,
             });
 
-            toast({
-                title: "上传成功",
+            toast.success("上传成功", {
                 description: `已创建 PR：${result.path}`,
             });
-            setSuccessUrl(result.pull_request_url);
-            setSuccessOpen(true);
+            onUploadSuccess(result.pull_request_url);
             onOpenChange(false);
         } catch (error) {
-            toast({
-                title: "上传失败",
+            toast.error("上传失败", {
                 description:
                     error instanceof Error ? error.message : "上传失败",
-                variant: "destructive",
             });
         } finally {
             setIsUploading(false);
@@ -171,114 +150,146 @@ export function UploadGithubPresetDialog({
     };
 
     return (
+        <DialogContent className="max-w-[90vw] sm:max-w-[520px] rounded-2xl">
+            <DialogHeader>
+                <DialogTitle>上传预设</DialogTitle>
+                <DialogDescription>
+                    选择本地预设文件后将自动创建 Pull Request 到 GitHub 仓库。
+                </DialogDescription>
+            </DialogHeader>
+
+            {!preset && (
+                <div
+                    className={cn(
+                        "flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 text-center transition-colors",
+                        isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/30"
+                    )}
+                    onDragEnter={(event) => {
+                        event.preventDefault();
+                        setIsDragging(true);
+                    }}
+                    onDragOver={(event) => {
+                        event.preventDefault();
+                        setIsDragging(true);
+                    }}
+                    onDragLeave={(event) => {
+                        event.preventDefault();
+                        setIsDragging(false);
+                    }}
+                    onDrop={(event) => {
+                        event.preventDefault();
+                        setIsDragging(false);
+                        void handleFiles(event.dataTransfer?.files ?? null);
+                    }}
+                >
+                    <p className="text-sm text-muted-foreground">
+                        将 .yml/.yaml 文件拖到这里
+                    </p>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                    >
+                        选择文件
+                    </Button>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".yaml,.yml"
+                        className="hidden"
+                        onChange={(event) => void handleFiles(event.target.files)}
+                    />
+                </div>
+            )}
+
+            {preset && (
+                <div className="grid gap-4">
+                    <div className="grid gap-2">
+                        <Label>预设名称</Label>
+                        <Input value={presetName} readOnly />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label>预设类型</Label>
+                        <Input
+                            value={preset.type === "main" ? "主插件预设" : "伪装预设"}
+                            readOnly
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label>文件名</Label>
+                        <Input
+                            value={fileName}
+                            onChange={(event) => setFileNameOverride(event.target.value)}
+                            placeholder="preset-name.yml"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            仅支持字母、数字、下划线、点、短横线和 yml/yaml 后缀。
+                        </p>
+                    </div>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                            setPreset(null);
+                            setFileNameOverride(null);
+                        }}
+                        disabled={isUploading}
+                    >
+                        重新选择文件
+                    </Button>
+                </div>
+            )}
+
+            <DialogFooter>
+                <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => onOpenChange(false)}
+                    disabled={isUploading}
+                >
+                    取消
+                </Button>
+                <Button
+                    type="button"
+                    onClick={handleUpload}
+                    disabled={!preset || isUploading}
+                >
+                    {isUploading ? "上传中..." : "开始上传"}
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    );
+}
+
+export function UploadGithubPresetDialog({
+    open,
+    onOpenChange,
+}: UploadGithubPresetDialogProps) {
+    const [successUrl, setSuccessUrl] = useState("");
+    const [successOpen, setSuccessOpen] = useState(false);
+    const [sessionKey, setSessionKey] = useState(0);
+
+    const handleOpenChange = (nextOpen: boolean) => {
+        if (nextOpen) {
+            setSessionKey((key) => key + 1);
+        }
+        onOpenChange(nextOpen);
+    };
+
+    return (
         <>
-            <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="max-w-[90vw] sm:max-w-[520px] rounded-2xl">
-                    <DialogHeader>
-                        <DialogTitle>上传预设</DialogTitle>
-                        <DialogDescription>
-                            选择本地预设文件后将自动创建 Pull Request 到 GitHub 仓库。
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    {!preset && (
-                        <div
-                            className={cn(
-                                "flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 text-center transition-colors",
-                                isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/30"
-                            )}
-                            onDragEnter={(event) => {
-                                event.preventDefault();
-                                setIsDragging(true);
-                            }}
-                            onDragOver={(event) => {
-                                event.preventDefault();
-                                setIsDragging(true);
-                            }}
-                            onDragLeave={(event) => {
-                                event.preventDefault();
-                                setIsDragging(false);
-                            }}
-                            onDrop={(event) => {
-                                event.preventDefault();
-                                setIsDragging(false);
-                                void handleFiles(event.dataTransfer?.files ?? null);
-                            }}
-                        >
-                            <p className="text-sm text-muted-foreground">
-                                将 .yml/.yaml 文件拖到这里
-                            </p>
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={isUploading}
-                            >
-                                选择文件
-                            </Button>
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept=".yaml,.yml"
-                                className="hidden"
-                                onChange={(event) => void handleFiles(event.target.files)}
-                            />
-                        </div>
-                    )}
-
-                    {preset && (
-                        <div className="grid gap-4">
-                            <div className="grid gap-2">
-                                <Label>预设名称</Label>
-                                <Input value={presetName} readOnly />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label>预设类型</Label>
-                                <Input
-                                    value={preset.type === "main" ? "主插件预设" : "伪装预设"}
-                                    readOnly
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label>文件名</Label>
-                                <Input
-                                    value={fileName}
-                                    onChange={(event) => setFileName(event.target.value)}
-                                    placeholder="preset-name.yml"
-                                />
-                                <p className="text-xs text-muted-foreground">
-                                    仅支持字母、数字、下划线、点、短横线和 yml/yaml 后缀。
-                                </p>
-                            </div>
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                onClick={() => setPreset(null)}
-                                disabled={isUploading}
-                            >
-                                重新选择文件
-                            </Button>
-                        </div>
-                    )}
-
-                    <DialogFooter>
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={() => onOpenChange(false)}
-                            disabled={isUploading}
-                        >
-                            取消
-                        </Button>
-                        <Button
-                            type="button"
-                            onClick={handleUpload}
-                            disabled={!preset || isUploading}
-                        >
-                            {isUploading ? "上传中..." : "开始上传"}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
+            <Dialog open={open} onOpenChange={handleOpenChange}>
+                {open && (
+                    <UploadGithubPresetDialogContent
+                        key={sessionKey}
+                        onOpenChange={handleOpenChange}
+                        onUploadSuccess={(url) => {
+                            setSuccessUrl(url);
+                            setSuccessOpen(true);
+                        }}
+                    />
+                )}
             </Dialog>
 
             <Dialog open={successOpen} onOpenChange={setSuccessOpen}>

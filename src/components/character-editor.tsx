@@ -6,7 +6,7 @@ import { CharacterWorldLore } from "./character-world-lore";
 import { CharacterMessagesForm } from "./character-messages";
 import { CharacterAuthorNote } from "./character-author-note";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useRef, useEffect, createRef } from "react";
+import { useState, type ReactNode } from "react";
 import {
     exportPreset,
     usePreset,
@@ -32,14 +32,6 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
 
     const [activeTab, setActiveTab] = useState("basic");
     const [uploadOpen, setUploadOpen] = useState(false);
-    const tabRefs = useRef<Record<string, React.RefObject<HTMLButtonElement>>>({
-        basic: createRef<HTMLButtonElement>(),
-        messages: createRef<HTMLButtonElement>(),
-        world_books: createRef<HTMLButtonElement>(),
-        author_note: createRef<HTMLButtonElement>(),
-        system: createRef<HTMLButtonElement>(),
-        input: createRef<HTMLButtonElement>(),
-    })
 
     if (!preset) {
         // TODO: 404
@@ -57,29 +49,32 @@ export function CharacterEditor({ presetId }: CharacterEditorProps) {
         key: NestedKeyOf<K>,
         value: GetNestedType<PresetModel["preset"], NestedKeyOf<K>>
     ) => {
-        preset.preset = updateNestedObject(preset.preset, key, value);
-        if (preset.type === "main") {
-            preset.name = (preset.preset as RawPreset).keywords[0];
-        } else {
-            preset.name = (preset.preset as CharacterPresetTemplate).name;
-        }
-        await updatePresetToLocal(preset.id, preset);
+        const nextPresetData = updateNestedObject(preset.preset, key, value);
+        const nextName =
+            preset.type === "main"
+                ? (nextPresetData as RawPreset).keywords[0]
+                : (nextPresetData as CharacterPresetTemplate).name;
+        const nextModel: PresetModel = {
+            ...preset,
+            preset: nextPresetData as PresetModel["preset"],
+            name: nextName,
+        };
+        await updatePresetToLocal(preset.id, nextModel);
     };
 
     return (
-        <div className="flex flex-col h-full px-6 scroll-auto">
+        <div className="flex h-full flex-col scroll-auto px-4 sm:px-6 lg:px-8">
             <div className="border-b bg-background sticky top-0 w-full">
                 <div className="flex h-16 items-center w-full justify-between bg-background ">
                     <Tabs
-                        defaultValue="basic"
+                        value={activeTab}
                         className="w-full bg-background"
                         onValueChange={setActiveTab}
                     >
-                        <TabsList className="h-10 relative pb-2">
+                        <TabsList className="h-10">
                             {preset.type === "main"
-                                ? <MainPresetTabs tabRefs={tabRefs.current} />
-                                : <CharacterPresetTabs tabRefs={tabRefs.current} />}
-                            <ActiveTabIndicator activeTab={activeTab} tabRefs={tabRefs.current} />
+                                ? <MainPresetTabs activeTab={activeTab} />
+                                : <CharacterPresetTabs activeTab={activeTab} />}
                         </TabsList>
                     </Tabs>
 
@@ -230,166 +225,77 @@ const tabTriggerVariants = {
     exit: { opacity: 0, scale: 0.8 },
 };
 
+const tabTriggerClassName =
+    "px-3 py-1.5 text-sm font-medium transition-colors group-data-[variant=default]/tabs-list:data-[state=active]:shadow-none focus-visible:border-transparent focus-visible:bg-background/60 focus-visible:ring-0 focus-visible:outline-none data-[state=active]:border-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-transparent";
 
-function MainPresetTabs({ tabRefs }: { tabRefs: Record<string, React.RefObject<HTMLButtonElement>> }) {
-    return (
-        <>
-            <motion.div
-                variants={tabTriggerVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                transition={{ duration: 0.2 }}
-            >
-
-                <TabsTrigger
-                    value="basic"
-                    className="relative px-3 py-1.5 text-sm font-medium transition-all z-10 data-[state=active]:bg-[transparent]"
-                    ref={tabRefs.basic}
-                >
-                    基本配置
-                </TabsTrigger>
-            </motion.div>
-            <motion.div
-                variants={tabTriggerVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                transition={{ duration: 0.2 }}
-            >
-                <TabsTrigger
-                    value="messages"
-                    className="relative px-3 py-1.5 text-sm font-medium transition-all z-10 data-[state=active]:bg-[transparent]"
-                    ref={tabRefs.messages}
-                >
-                    角色提示词
-                </TabsTrigger>
-            </motion.div>
-            <motion.div
-                variants={tabTriggerVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                transition={{ duration: 0.2 }}
-            >
-                <TabsTrigger
-                    value="world_books"
-                    className="relative px-3 py-1.5 text-sm font-medium transition-all z-10 data-[state=active]:bg-[transparent]"
-                    ref={tabRefs.world_books}
-                >
-                    世界书
-                </TabsTrigger>
-            </motion.div>
-            <motion.div
-                variants={tabTriggerVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                transition={{ duration: 0.2 }}
-            >
-                <TabsTrigger
-                    value="author_note"
-                    className="relative px-3 py-1.5 text-sm font-medium transition-all z-10 data-[state=active]:bg-[transparent]"
-                    ref={tabRefs.author_note}
-                >
-                    作者注释
-                </TabsTrigger>
-            </motion.div>
-        </>
-    );
-}
-
-function CharacterPresetTabs({ tabRefs }: { tabRefs: Record<string, React.RefObject<HTMLButtonElement>> }) {
-    return (
-        <>
-            <motion.div
-                variants={tabTriggerVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                transition={{ duration: 0.2 }}
-            >
-                <TabsTrigger
-                    value="basic"
-                    className="relative px-3 py-1.5 text-sm font-medium transition-all z-10 data-[state=active]:bg-[transparent]"
-
-                    ref={tabRefs.basic}
-                >
-                    基本配置
-                </TabsTrigger>
-            </motion.div>
-
-            <motion.div
-                variants={tabTriggerVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                transition={{ duration: 0.2 }}
-            >
-                <TabsTrigger
-                    className="relative px-3 py-1.5 text-sm font-medium transition-all z-10 data-[state=active]:bg-[transparent]"
-                    ref={tabRefs.system}
-                    value="system"
-                >
-                    系统提示词
-                </TabsTrigger>
-            </motion.div>
-
-            <motion.div
-                variants={tabTriggerVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                transition={{ duration: 0.2 }}
-            >
-                <TabsTrigger
-                    value="input"
-                    className="relative px-3 py-1.5 text-sm font-medium transition-all z-10 data-[state=active]:bg-[transparent]"
-                    ref={tabRefs.input}
-                >
-                    格式化输入提示词
-                </TabsTrigger>
-            </motion.div>
-
-        </>
-    );
-}
-
-
-interface ActiveTabIndicatorProps {
+interface EditorTabTriggerProps {
+    value: string;
     activeTab: string;
-    tabRefs: Record<string, React.RefObject<HTMLButtonElement>>;
+    children: ReactNode;
 }
 
-const ActiveTabIndicator: React.FC<ActiveTabIndicatorProps> = ({ activeTab, tabRefs }) => {
-    const [indicatorWidth, setIndicatorWidth] = useState(0);
-    const [indicatorLeft, setIndicatorLeft] = useState(0);
-
-    useEffect(() => {
-        const updateIndicator = () => {
-            const currentTabRef = tabRefs[activeTab as keyof typeof tabRefs];
-            if (currentTabRef && currentTabRef.current) {
-                setIndicatorWidth(currentTabRef.current.offsetWidth);
-                setIndicatorLeft(currentTabRef.current.offsetLeft);
-            }
-        };
-
-        updateIndicator();
-        window.addEventListener("resize", updateIndicator);
-
-        return () => {
-            window.removeEventListener("resize", updateIndicator);
-        };
-    }, [activeTab, tabRefs]);
-
+function EditorTabTrigger({ value, activeTab, children }: EditorTabTriggerProps) {
     return (
         <motion.div
-            className="absolute top-[4px] left-0 h-8 bg-background rounded-(--radius) transition-all duration-300 z-1"
-            style={{
-                left: indicatorLeft,
-                width: indicatorWidth,
-            }}
-            layout
-        />
+            className="h-full"
+            variants={tabTriggerVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            transition={{ duration: 0.2 }}
+        >
+            <TabsTrigger value={value} className={tabTriggerClassName}>
+                {activeTab === value && (
+                    <motion.span
+                        layoutId="character-editor-active-tab"
+                        initial={false}
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-0 rounded-md bg-background"
+                        transition={{
+                            type: "spring",
+                            stiffness: 500,
+                            damping: 38,
+                            mass: 0.7,
+                        }}
+                    />
+                )}
+                <span className="relative z-10">{children}</span>
+            </TabsTrigger>
+        </motion.div>
     );
-};
+}
+
+function MainPresetTabs({ activeTab }: { activeTab: string }) {
+    return (
+        <>
+            <EditorTabTrigger value="basic" activeTab={activeTab}>
+                基本配置
+            </EditorTabTrigger>
+            <EditorTabTrigger value="messages" activeTab={activeTab}>
+                角色提示词
+            </EditorTabTrigger>
+            <EditorTabTrigger value="world_books" activeTab={activeTab}>
+                世界书
+            </EditorTabTrigger>
+            <EditorTabTrigger value="author_note" activeTab={activeTab}>
+                作者注释
+            </EditorTabTrigger>
+        </>
+    );
+}
+
+function CharacterPresetTabs({ activeTab }: { activeTab: string }) {
+    return (
+        <>
+            <EditorTabTrigger value="basic" activeTab={activeTab}>
+                基本配置
+            </EditorTabTrigger>
+            <EditorTabTrigger value="system" activeTab={activeTab}>
+                系统提示词
+            </EditorTabTrigger>
+            <EditorTabTrigger value="input" activeTab={activeTab}>
+                格式化输入提示词
+            </EditorTabTrigger>
+        </>
+    );
+}

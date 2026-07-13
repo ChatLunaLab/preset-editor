@@ -1,8 +1,12 @@
 import { sha1 } from '@/lib/utils';
 import { CharacterPresetTemplate, RawPreset } from '@/types/preset';
-import { SquarePresetData, SquarePresetDataView } from '@/types/square';
+import {
+    SquarePresetData,
+    SquarePresetDataView,
+    SquareStatsPeriod,
+} from '@/types/square';
 import { load } from 'js-yaml';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 
 // 缓存管理对象
 const cacheManager = {
@@ -84,14 +88,17 @@ const chunkArray = <T>(array: T[], size: number): T[][] => {
 
 // 获取预设元数据
 export const fetchPresetData = async (
-    presets: SquarePresetData[]
+    presets: SquarePresetData[],
+    period: SquareStatsPeriod = 'all',
+    forceRefresh = false
 ): Promise<SquarePresetDataView[]> => {
     const presetPaths = presets.map((p) => p.rawPath);
+    const getCacheKey = (path: string) => `${period}:${path}`;
     const cachedData = presetPaths
-        .map((path) => cacheManager.presetData.get(path))
+        .map((path) => cacheManager.presetData.get(getCacheKey(path)))
         .filter(Boolean) as SquarePresetDataView[];
 
-    if (cachedData.length === presetPaths.length) {
+    if (!forceRefresh && cachedData.length === presetPaths.length) {
         return cachedData.sort((a, b) => b.path.localeCompare(a.path));
     }
 
@@ -104,14 +111,22 @@ export const fetchPresetData = async (
             const response = await fetch(`${API_URL}/query_preset_views`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(chunk),
+                body: JSON.stringify({ presetPaths: chunk, period }),
             });
 
             if (!response.ok) throw new Error('Failed to fetch preset data');
 
-            const chunkData = await response.json() as SquarePresetDataView[];
-            chunkData.forEach((data) => cacheManager.presetData.set(data.path, data));
-            allData.push(...chunkData);
+            const chunkData = (await response.json()) as SquarePresetDataView[];
+            const dataByPath = new Map(
+                chunkData.map((data) => [data.path, data])
+            );
+            const normalizedData = chunk.map(
+                (path) => dataByPath.get(path) ?? { path, views: 0, downloads: 0 }
+            );
+            normalizedData.forEach((data) =>
+                cacheManager.presetData.set(getCacheKey(data.path), data)
+            );
+            allData.push(...normalizedData);
         }
 
         return allData.sort((a, b) => b.path.localeCompare(a.path));
@@ -150,21 +165,44 @@ const filterByKeywords = (preset: SquarePresetData, keywords: string[]) => {
 export function useSquarePresets(
     sortOption: string,
     keywords: string[],
-    refresh: boolean
+    refresh: boolean,
+    period: SquareStatsPeriod
 ) {
     const [presets, setPresets] = useState<SquarePresetData[]>([]);
-    const [presetData, setPresetData] = useState<SquarePresetDataView[]>([]);
-    const [previousSortedIds, setPreviousSortedIds] = useState<string[]>([]);
+    const [presetDataState, setPresetDataState] = useState<{
+        period: SquareStatsPeriod;
+        data: SquarePresetDataView[];
+    }>({ period, data: [] });
+    const [isLoading, setIsLoading] = useState(true);
 
     // 获取所有预设数据
     useEffect(() => {
-        fetchPresets().then(setPresets);
+        let cancelled = false;
+
+        void fetchPresets()
+            .then((data) => {
+                if (!cancelled) {
+                    setPresets(data);
+                }
+            })
+            .finally(() => {
+                if (!cancelled) {
+                    setIsLoading(false);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     // 根据排序和过滤条件处理预设数据
     const sortedPresets = useMemo(() => {
+        const presetData =
+            presetDataState.period === period ? presetDataState.data : [];
+        const dataByPath = new Map(presetData.map((data) => [data.path, data]));
         let sorted = [...presets].map((p) => {
-            const meta = cacheManager.presetData.get(p.rawPath);
+            const meta = dataByPath.get(p.rawPath);
             return { ...p, meta };
         });
 
@@ -175,46 +213,32 @@ export function useSquarePresets(
         return keywords.length
             ? sorted.filter((p) => filterByKeywords(p, keywords))
             : sorted;
-    }, [presets, sortOption, keywords, refresh, presetData]);
+    }, [presets, sortOption, keywords, presetDataState, period]);
 
-    // 检查排序后的预设ID列表是否发生变化
-    const sortedIds = useMemo(() => {
-        return sortedPresets.map((preset) => preset.sha1);
-    }, [sortedPresets]);
-
-    // 比较当前排序和之前的排序是否一致
-    const orderChanged = useMemo(() => {
-        if (sortedIds.length !== previousSortedIds.length) return true;
-
-        for (let i = 0; i < sortedIds.length; i++) {
-            if (sortedIds[i] !== previousSortedIds[i]) return true;
-        }
-
-        return false;
-    }, [sortedIds, previousSortedIds]);
-
-    // 当排序后的预设数据变化且顺序发生变化时，获取预设视图数据
+    // 获取当前时间范围的预设统计数据
     useEffect(() => {
-        if (sortedPresets.length > 0 && (orderChanged || refresh)) {
-            fetchPresetData(sortedPresets).then(setPresetData);
-            setPreviousSortedIds(sortedIds);
-        }
-    }, [sortedPresets, orderChanged, sortedIds, refresh]);
+        let cancelled = false;
 
-    // 将预设视图数据附加到排序后的预设数据上
-    const presetsWithViewData = useMemo(() => {
-        return sortedPresets.map((preset) => {
-            const viewData = presetData.find((p) => p.path === preset.rawPath);
-            return {
-                ...preset,
-                meta: viewData || preset.meta,
-            };
-        });
-    }, [sortedPresets, presetData]);
+        if (presets.length > 0) {
+            void fetchPresetData(presets, period, refresh).then((data) => {
+                if (!cancelled) {
+                    setPresetDataState({ period, data });
+                }
+            });
+        }
+
+        return () => {
+            cancelled = true;
+        };
+    }, [presets, period, refresh]);
+
+    const presetData =
+        presetDataState.period === period ? presetDataState.data : [];
 
     return {
-        presets: presetsWithViewData,
+        presets: sortedPresets,
         presetDataList: presetData,
+        isLoading,
     };
 }
 
@@ -243,19 +267,41 @@ export const incrementDownloads = (id: string) =>
 
 export function useSquarePreset(id: string) {
     const [preset, setPreset] = useState<SquarePresetData>();
+    const [loadedId, setLoadedId] = useState<string | null>(null);
+    const requestIdRef = useRef(0);
 
     useEffect(() => {
-        const findPreset = (data: SquarePresetData[]) =>
-            data.find((p) => p.sha1 === id);
+        if (!id) {
+            return;
+        }
+
+        const requestId = ++requestIdRef.current;
+        let cancelled = false;
+
+        const applyResult = (data: SquarePresetData[] | undefined) => {
+            if (cancelled || requestId !== requestIdRef.current) {
+                return;
+            }
+            setPreset(data?.find((p) => p.sha1 === id));
+            setLoadedId(id);
+        };
 
         if (cacheManager.presets.data) {
-            setPreset(findPreset(cacheManager.presets.data));
+            // Defer cache read so setState is not synchronous in the effect body.
+            queueMicrotask(() => applyResult(cacheManager.presets.data ?? undefined));
         } else {
-            fetchPresets().then((data) => setPreset(findPreset(data)));
+            fetchPresets().then((data) => applyResult(data));
         }
+
+        return () => {
+            cancelled = true;
+        };
     }, [id]);
 
-    return preset;
+    const isLoading = Boolean(id) && loadedId !== id;
+    const resolvedPreset = loadedId === id ? preset : undefined;
+
+    return { preset: resolvedPreset, isLoading };
 }
 
 // 预设内容加载

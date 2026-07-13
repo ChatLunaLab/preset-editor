@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
     getPresetDisplayName,
     getPresetDefaultFileName,
@@ -12,7 +12,7 @@ import {
     PresetModel,
     uploadPreset,
 } from "@/hooks/use-preset";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 interface UploadPresetDialogProps {
     preset: PresetModel;
@@ -25,20 +25,25 @@ export function UploadPresetDialog({
     open,
     onOpenChange,
 }: UploadPresetDialogProps) {
-    const toaster = useToast();
     const presetName = useMemo(() => getPresetDisplayName(preset), [preset]);
+    const defaultFileName = useMemo(
+        () => getPresetDefaultFileName(presetName),
+        [presetName],
+    );
 
-    const [fileName, setFileName] = useState("");
+    const [fileNameOverride, setFileNameOverride] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [successUrl, setSuccessUrl] = useState("");
     const [successOpen, setSuccessOpen] = useState(false);
 
-    useEffect(() => {
-        if (!open) {
-            return;
+    const fileName = fileNameOverride ?? (open ? defaultFileName : "");
+
+    const handleOpenChange = (nextOpen: boolean) => {
+        if (!nextOpen) {
+            setFileNameOverride(null);
         }
-        setFileName(getPresetDefaultFileName(presetName));
-    }, [open, presetName]);
+        onOpenChange(nextOpen);
+    };
 
     const handleUpload = async () => {
         setIsUploading(true);
@@ -48,19 +53,16 @@ export function UploadPresetDialog({
                 fileName,
             });
 
-            toaster.toast({
-                title: "上传成功",
+            toast.success("上传成功", {
                 description: `已创建 PR：${result.path}`,
             });
             setSuccessUrl(result.pull_request_url);
             setSuccessOpen(true);
-            onOpenChange(false);
+            handleOpenChange(false);
         } catch (error) {
-            toaster.toast({
-                title: "上传失败",
+            toast.error("上传失败", {
                 description:
                     error instanceof Error ? error.message : "上传失败",
-                variant: "destructive",
             });
         } finally {
             setIsUploading(false);
@@ -69,7 +71,7 @@ export function UploadPresetDialog({
 
     return (
         <>
-            <Dialog open={open} onOpenChange={onOpenChange}>
+            <Dialog open={open} onOpenChange={handleOpenChange}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>上传预设</DialogTitle>
@@ -99,7 +101,7 @@ export function UploadPresetDialog({
                             <Input
                                 value={fileName}
                                 onChange={(event) =>
-                                    setFileName(event.target.value)
+                                    setFileNameOverride(event.target.value)
                                 }
                                 placeholder="preset-name.yml"
                             />
@@ -113,7 +115,7 @@ export function UploadPresetDialog({
                         <Button
                             type="button"
                             variant="secondary"
-                            onClick={() => onOpenChange(false)}
+                            onClick={() => handleOpenChange(false)}
                             disabled={isUploading}
                         >
                             取消

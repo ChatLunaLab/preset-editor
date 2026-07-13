@@ -43,8 +43,8 @@ export function CharacterAuthorNote({
 
     return (
         <div className="grid gap-6 sm:grid-cols-1">
-            <Card className="rounded-xl">
-                <CardHeader className="flex flex-row items-center justify-between p-6">
+            <Card className="gap-0 rounded-xl">
+                <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>作者注释</CardTitle>
                     <Button
                         variant="ghost"
@@ -69,7 +69,7 @@ export function CharacterAuthorNote({
                     )}
                 >
                     <div className="overflow-hidden">
-                        <CardContent className="space-y-4 p-6 pt-0">
+                        <CardContent className="space-y-4 pt-6">
                             <div className="space-y-2">
                                 <Label htmlFor="description">注释内容</Label>
                                 <Textarea

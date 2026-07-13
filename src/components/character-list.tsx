@@ -26,7 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   deletePreset,
   exportPreset,
@@ -47,7 +47,6 @@ export function CharacterList({
   presets: initialCharacters,
   searchQuery,
 }: CharacterListProps) {
-  const [characters, setCharacters] = useState([] as PresetModel[]);
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [openAlert, setOpenAlert] = useState(false);
@@ -58,27 +57,24 @@ export function CharacterList({
   const [uploadOpen, setUploadOpen] = useState(false);
   const navigate = useNavigate();
 
+  const characters = useMemo(() => {
+    const filteredCharacters = initialCharacters.filter((character) =>
+      character.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+
+    return [...filteredCharacters].sort((a, b) => {
+      if (a[sortKey] < b[sortKey]) return sortOrder === "asc" ? -1 : 1;
+      if (a[sortKey] > b[sortKey]) return sortOrder === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [initialCharacters, searchQuery, sortKey, sortOrder]);
+
   const sortCharacters = (key: SortKey) => {
     const newSortOrder =
       key === sortKey && sortOrder === "asc" ? "desc" : "asc";
     setSortKey(key);
     setSortOrder(newSortOrder);
-
-    const sortedCharacters = [...characters].sort((a, b) => {
-      if (a[key] < b[key]) return sortOrder === "asc" ? -1 : 1;
-      if (a[key] > b[key]) return sortOrder === "asc" ? 1 : -1;
-      return 0;
-    });
-
-    setCharacters(sortedCharacters);
   };
-
-  useEffect(() => {
-    const filteredCharacters = initialCharacters.filter((character) =>
-      character.name.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
-    setCharacters(filteredCharacters);
-  }, [initialCharacters, searchQuery]);
 
   if (initialCharacters.length === 0) {
     return (

@@ -35,8 +35,8 @@ export function CharacterSystem({
 
     return (
         <div className="grid gap-6 sm:grid-cols-1">
-            <Card className="rounded-xl">
-                <CardHeader className="flex flex-row items-center justify-between p-6">
+            <Card className="gap-0 rounded-xl">
+                <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>系统提示词</CardTitle>
                     <Button
                         variant="ghost"
@@ -61,7 +61,7 @@ export function CharacterSystem({
                     )}
                 >
                     <div className="overflow-hidden">
-                        <CardContent className="space-y-4 p-6 pt-0">
+                        <CardContent className="space-y-4 pt-6">
                             <div className="space-y-2">
                                 <Label htmlFor="description">系统提示词内容</Label>
                                 <Textarea

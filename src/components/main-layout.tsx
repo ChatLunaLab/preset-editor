@@ -7,33 +7,61 @@ import {
     FolderOpen,
     Menu,
     ChevronRight,
+    PanelLeftClose,
+    PanelLeftOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SettingsDialog } from "./settings-dialog";
 import { useRecentPresets } from "@/hooks/use-preset";
-import { Toaster } from "./ui/toaster";
-import { Link, useLocation } from 'react-router';
+import { useSidebar } from "@/hooks/use-sidebar";
+import { Toaster } from "./ui/sonner";
+import { Link, Outlet, useLocation } from 'react-router';
 
-interface MainLayoutProps {
-    children: React.ReactNode;
-}
-
-export function MainLayout({ children }: MainLayoutProps) {
-    const [isOpen, setIsOpen] = React.useState(false);
-    const recentPresets = useRecentPresets();
-
-    const Sidebar = () => (
+function Sidebar({
+    recentPresets,
+    collapsed = false,
+    onToggle,
+}: {
+    recentPresets: ReturnType<typeof useRecentPresets>;
+    collapsed?: boolean;
+    onToggle?: () => void;
+}) {
+    return (
         <div className="flex flex-col h-full">
-            <div className="flex h-16 items-center px-4">
-                ChatLuna 预设编辑器
+            <div
+                className={cn(
+                    "flex h-16 shrink-0 items-center gap-2 px-4",
+                    collapsed ? "justify-center px-2" : "justify-between"
+                )}
+            >
+                <span className={cn("truncate font-medium", collapsed && "sr-only")}>
+                    ChatLuna 预设站
+                </span>
+                {onToggle && (
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-9 shrink-0"
+                        aria-label={collapsed ? "展开侧边栏" : "收起侧边栏"}
+                        title={collapsed ? "展开侧边栏" : "收起侧边栏"}
+                        onClick={onToggle}
+                    >
+                        {collapsed ? (
+                            <PanelLeftOpen className="size-5" />
+                        ) : (
+                            <PanelLeftClose className="size-5" />
+                        )}
+                    </Button>
+                )}
             </div>
 
             <div className="flex flex-col flex-1 overflow-auto px-2 gap-y-2">
-                <NavItem href="/" icon={FolderOpen} label="项目" />
-                <NavItem href="/square" icon={Users} label="广场" />
+                <NavItem href="/" icon={FolderOpen} label="项目" compact={collapsed} />
+                <NavItem href="/square" icon={Users} label="广场" compact={collapsed} />
 
-                {recentPresets.length > 0 && (
+                {!collapsed && recentPresets.length > 0 && (
                     <div className="py-2">
                         <div className="px-2 py-2">
                             <h2 className="text-sm font-medium text-muted-foreground">
@@ -59,15 +87,30 @@ export function MainLayout({ children }: MainLayoutProps) {
                 )}
             </div>
 
-            <SettingsDialog />
+            <SettingsDialog compact={collapsed} />
         </div>
     );
+}
+
+export function MainLayout() {
+    const [isOpen, setIsOpen] = React.useState(false);
+    const { isCollapsed: isSidebarCollapsed, toggle: toggleSidebar } = useSidebar();
+    const recentPresets = useRecentPresets();
 
     return (
         <div className="flex h-screen bg-background">
             {/* Desktop Sidebar */}
-            <div className="hidden md:block md:w-64 border-r bg-card/50 h-screen">
-                <Sidebar />
+            <div
+                className={cn(
+                    "hidden h-screen shrink-0 border-r bg-card/50 transition-[width] duration-300 ease-in-out md:block",
+                    isSidebarCollapsed ? "w-16" : "w-64"
+                )}
+            >
+                <Sidebar
+                    recentPresets={recentPresets}
+                    collapsed={isSidebarCollapsed}
+                    onToggle={toggleSidebar}
+                />
             </div>
 
             {/* Mobile Sidebar */}
@@ -82,7 +125,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                     </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-64 p-0">
-                    <Sidebar />
+                    <Sidebar recentPresets={recentPresets} />
                 </SheetContent>
             </Sheet>
 
@@ -90,7 +133,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             <div className="flex-1 w-full h-screen overflow-auto">
                 <div className="md:hidden h-16 border-b" />{" "}
                 {/* Mobile header spacing */}
-                {children}
+                <Outlet />
             </div>
             <Toaster />
         </div>
@@ -101,24 +144,27 @@ interface NavItemProps {
     icon?: React.ComponentType<{ className?: string }>;
     label: string;
     href: string;
+    compact?: boolean;
 }
 
-function NavItem({ icon: Icon, label, href }: NavItemProps) {
+function NavItem({ icon: Icon, label, href, compact = false }: NavItemProps) {
     const { pathname } = useLocation();
   
     const isActive = pathname === href || pathname.startsWith(`${href}/`);
 
     return (
-        <Link to={href}>
+        <Link to={href} title={compact ? label : undefined}>
             <Button
                 variant="ghost"
+                aria-label={compact ? label : undefined}
                 className={cn(
                     "w-full justify-start gap-3 px-4 mt-0 h-10 rounded-lg",
+                    compact && "justify-center gap-0 px-0",
                     isActive && "bg-primary/10 text-primary hover:bg-primary/20"
                 )}
             >
-                {Icon && <Icon className="h-5 w-5" />}
-                <span>{label}</span>
+                {Icon && <Icon className="size-5 shrink-0" />}
+                <span className={cn(compact && "sr-only")}>{label}</span>
             </Button>
         </Link>
     );

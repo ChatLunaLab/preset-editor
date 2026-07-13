@@ -1,45 +1,29 @@
-import { MainLayout } from "@/components/main-layout"
 import { PresetDetails } from "@/components/preset-details"
 import { incrementViews, useSquarePreset } from "@/hooks/use-square-presets";
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useParams } from "react-router";
+import NotFoundPage from "@/pages/not-found";
 
 export default function PresetViewPage() {
     const { id } = useParams();
-    const [presetId, setPresetId] = useState<string>("");
-    const [isLoading, setIsLoading] = useState(true);
-
-    const preset = useSquarePreset(presetId)
-
-    useEffect(() => {
-        if (id) {
-            setPresetId(id);
-        }
-        setIsLoading(true);
-    }, [id]);
+    const presetId = typeof id === "string" ? id : "";
+    const { preset, isLoading } = useSquarePreset(presetId);
+    const viewedPathRef = useRef<string | null>(null);
 
     useEffect(() => {
-        if (preset) {
-            incrementViews(preset.rawPath);
-            setIsLoading(false);
-        } else if (presetId) {
-            // 如果有 presetId 但没有找到 preset，说明加载完成但未找到
-            setIsLoading(false);
+        if (preset && viewedPathRef.current !== preset.rawPath) {
+            viewedPathRef.current = preset.rawPath;
+            void incrementViews(preset.rawPath);
         }
-    }, [preset, presetId]);
+    }, [preset]);
 
     if (isLoading) {
         return <div>Loading...</div>;
     }
 
-    if (!presetId || typeof presetId !== "string" || !preset) {
-        return <div>Preset not found</div>;
+    if (!presetId || !preset) {
+        return <NotFoundPage />;
     }
 
-    return (
-        <MainLayout>
-            <PresetDetails squarePreset={preset} />
-        </MainLayout>
-    )
+    return <PresetDetails squarePreset={preset} />
 }
-

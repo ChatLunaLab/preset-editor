@@ -1,6 +1,5 @@
 'use client';
 
-import { MainLayout } from '@/components/main-layout';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -23,6 +22,8 @@ import {
 import { useMemo, useState, useLayoutEffect } from 'react';
 import { Link } from 'react-router';
 import { useSquarePresets } from '@/hooks/use-square-presets';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SquareStatsPeriod } from '@/types/square';
 
 const sortOptions = [
     { value: 'views', label: '浏览最多' },
@@ -34,21 +35,30 @@ const sortOptions = [
     { value: 'newest', label: '最新发布' },
 ];
 
+const periodOptions: { value: SquareStatsPeriod; label: string }[] = [
+    { value: 'all', label: '总榜' },
+    { value: 'day', label: '日榜' },
+    { value: 'week', label: '周榜' },
+    { value: 'month', label: '月榜' },
+];
+
 import { motion } from 'framer-motion';
 
 export default function SquarePage() {
     const [search, setSearch] = useState('');
     const [sortOption, setSortOption] = useState('views');
+    const [period, setPeriod] = useState<SquareStatsPeriod>('all');
     const [currentPage, setCurrentPage] = useState(1);
     const [refresh, setRefresh] = useState(false);
 
     const itemsPerPage = 12;
 
     const keywords = useMemo(() => search.split(' ').filter(Boolean), [search]);
-    const { presets: sourcePresets, presetDataList } = useSquarePresets(
+    const { presets: sourcePresets, isLoading } = useSquarePresets(
         sortOption,
         keywords,
-        refresh
+        refresh,
+        period
     );
     const totalPages = Math.ceil(sourcePresets.length / itemsPerPage);
 
@@ -86,12 +96,31 @@ export default function SquarePage() {
         };
     }, []);
 
+    if (isLoading) {
+        return (
+            <main className="flex min-h-full items-center justify-center px-6 py-16">
+                <div className="flex flex-col items-center text-center">
+                    <img
+                        src="/images/loading.svg"
+                        alt="正在加载预设"
+                        width="800"
+                        height="680"
+                        className="mb-6 h-48 w-56 object-contain dark:brightness-125"
+                    />
+                    <p className="text-base font-medium">加载中</p>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                        正在获取广场预设...
+                    </p>
+                </div>
+            </main>
+        );
+    }
+
     return (
-        <MainLayout>
-            <div className="container py-6 px-4 sm:px-6 md:px-8">
+        <div className="container px-4 py-6 sm:px-6 lg:px-8">
                 {/* Search and Filters */}
-                <div className="space-y-4 mb-8">
-                    <div className="flex items-center gap-4">
+                <div className="sticky top-0 z-20 -mx-4 mb-8 space-y-3 border-b bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/85 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
@@ -112,7 +141,7 @@ export default function SquarePage() {
                                 setCurrentPage(1);
                             }}
                         >
-                            <SelectTrigger className="w-[180px]">
+                            <SelectTrigger className="w-full sm:w-[180px]">
                                 <SelectValue placeholder="排序方式" />
                             </SelectTrigger>
                             <SelectContent>
@@ -127,6 +156,30 @@ export default function SquarePage() {
                             </SelectContent>
                         </Select>
                     </div>
+                    {(sortOption === 'views' || sortOption === 'downloads') && (
+                        <Tabs
+                            value={period}
+                            onValueChange={(value) => {
+                                setPeriod(value as SquareStatsPeriod);
+                                setCurrentPage(1);
+                            }}
+                        >
+                            <TabsList
+                                aria-label="统计时间范围"
+                                className="grid h-10 w-full grid-cols-4 p-1 sm:flex sm:h-9 sm:w-fit"
+                            >
+                                {periodOptions.map((option) => (
+                                    <TabsTrigger
+                                        key={option.value}
+                                        value={option.value}
+                                        className="px-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground"
+                                    >
+                                        {option.label}
+                                    </TabsTrigger>
+                                ))}
+                            </TabsList>
+                        </Tabs>
+                    )}
                 </div>
 
                 {/* Presets Grid */}
@@ -136,7 +189,7 @@ export default function SquarePage() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="grid gap-6 px-4 sm:px-6 md:px-8 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+                    className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
                     style={{ gridTemplateRows: 'masonry' }}
                 >
                     {currentData.map((preset) => (
@@ -181,21 +234,13 @@ export default function SquarePage() {
                                             <div className="flex items-center gap-1">
                                                 <Download className="h-4 w-4" />
                                                 <span>
-                                                    {presetDataList.find(
-                                                        (p) =>
-                                                            p.path ===
-                                                            preset.rawPath
-                                                    )?.downloads ?? 0}
+                                                    {preset.meta?.downloads ?? 0}
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-1">
                                                 <Eye className="h-4 w-4" />
                                                 <span>
-                                                    {presetDataList.find(
-                                                        (p) =>
-                                                            p.path ===
-                                                            preset.rawPath
-                                                    )?.views ?? 0}
+                                                    {preset.meta?.views ?? 0}
                                                 </span>
                                             </div>
                                         </div>
@@ -263,7 +308,6 @@ export default function SquarePage() {
                         </PaginationContent>
                     </Pagination>
                 </div>
-            </div>
-        </MainLayout>
+        </div>
     );
 }

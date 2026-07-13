@@ -44,8 +44,8 @@ export function CharacterMessagesForm({
 
     return (
         <div className="grid gap-6 sm:grid-cols-1">
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between p-6">
+            <Card className="gap-0">
+                <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>提示词列表</CardTitle>
                     <div className="space-x-2">
                         <Button
@@ -107,7 +107,7 @@ export function CharacterMessagesForm({
                     )}
                 >
                     <div className="overflow-hidden">
-                        <CardContent className="space-y-4 p-6 pt-0">
+                        <CardContent className="space-y-4 pt-6">
                             {preset.prompts.map((message, index) => (
                                 <div
                                     key={index}

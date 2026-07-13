@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import yaml from 'js-yaml';
+import { dump } from 'js-yaml';
 import { Skeleton } from "@/components/ui/skeleton";
 import { RawPreset, CharacterPresetTemplate } from "@/types/preset";
 import type { editor } from 'monaco-editor';
@@ -35,7 +35,7 @@ export function PresetPreviewDialog({ preset, open, onOpenChange }: PresetPrevie
   const isMobile = useMediaQuery('(max-width: 768px)');
 
   // 转换preset为YAML
-  const presetYaml = yaml.dump(preset, { lineWidth: -1 });
+  const presetYaml = dump(preset, { lineWidth: -1 });
 
   // 初始化编辑器
   useEffect(() => {

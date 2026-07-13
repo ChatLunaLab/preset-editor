@@ -8,25 +8,37 @@ import Page from "./pages/app";
 import SquarePage from "./pages/square/page";
 import CharacterEditPage from "./pages/character/page";
 import PresetViewPage from "./pages/square/[id]/page";
+import NotFoundPage from "./pages/not-found";
+import { MainLayout } from "./components/main-layout";
 
 
 
 const router = createHashRouter([
     {
         path: "/",
-        element: <Page />,
-    },
-    {
-        path: "/square",
-        element: <SquarePage />,
-    },
-    {
-        path: "/square/:id",
-        element: <PresetViewPage />,
-    },
-    {
-        path: "/character/:id",
-        element: <CharacterEditPage />,
+        element: <MainLayout />,
+        children: [
+            {
+                index: true,
+                element: <Page />,
+            },
+            {
+                path: "square",
+                element: <SquarePage />,
+            },
+            {
+                path: "square/:id",
+                element: <PresetViewPage />,
+            },
+            {
+                path: "character/:id",
+                element: <CharacterEditPage />,
+            },
+            {
+                path: "*",
+                element: <NotFoundPage />,
+            },
+        ],
     },
 ]);
 

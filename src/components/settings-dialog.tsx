@@ -51,7 +51,7 @@ const settingsCategories: SettingsCategoryProps[] = [
     { title: "数据管理", icon: <Database className="h-4 w-4" />, value: "data" },
 ];
 
-export function SettingsDialog() {
+export function SettingsDialog({ compact = false }: { compact?: boolean }) {
     const { theme, setTheme } = useTheme();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [selectedCategory, setSelectedCategory] = useState(settingsCategories[0].value);
@@ -205,10 +205,15 @@ export function SettingsDialog() {
             <DialogTrigger asChild>
                 <Button
                     variant="ghost"
-                    className="w-full justify-start gap-3 px-4 h-11 rounded-t-lg rounded-b-none border-t hover:bg-primary/5"
+                    aria-label={compact ? "设置" : undefined}
+                    title={compact ? "设置" : undefined}
+                    className={cn(
+                        "w-full justify-start gap-3 px-4 h-11 rounded-t-lg rounded-b-none border-t hover:bg-primary/5",
+                        compact && "justify-center gap-0 px-0"
+                    )}
                 >
-                    <Settings className="h-5 w-5" />
-                    <span>设置</span>
+                    <Settings className="size-5 shrink-0" />
+                    <span className={cn(compact && "sr-only")}>设置</span>
                 </Button>
             </DialogTrigger>
             <DialogContent className={cn(

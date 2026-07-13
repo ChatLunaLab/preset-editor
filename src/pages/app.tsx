@@ -2,7 +2,6 @@
 
 "use client";
 
-import { MainLayout } from "@/components/main-layout";
 import { CharacterList } from "@/components/character-list";
 import { importPreset, usePresets } from "@/hooks/use-preset";
 import { NewPresetDialog } from "@/components/new-preset-dialog";
@@ -11,11 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Import, Upload } from "lucide-react";
 import { UploadGithubPresetDialog } from "@/components/upload-github-preset-dialog";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 export default function Page() {
     const presets = usePresets();
-    const { toast } = useToast();
     const [searchQuery, setSearchQuery] = useState("");
     const [uploadOpen, setUploadOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -29,10 +27,8 @@ export default function Page() {
                     const data = e.target?.result as string;
                     await importPreset(data);
                 } catch (error) {
-                    toast({
-                        title: "导入失败",
+                    toast.error("导入失败", {
                         description: "导入的文件格式不正确",
-                        variant: "destructive",
                     });
                     console.error(error);
                 }
@@ -42,8 +38,8 @@ export default function Page() {
     };
 
     return (
-        <MainLayout>
-            <div className="container flex flex-col py-6 px-6 md:px-12 lg:px-24">
+        <>
+            <div className="container flex flex-col px-4 py-6 sm:px-6 lg:px-8">
                 <div className="flex flex-col md:flex-row md:items-center  justify-between gap-4 mb-6">
                     <div className="text-2xl md:text-3xl font-bold"></div>
                     <div className="flex items-center gap-4">
@@ -85,6 +81,6 @@ export default function Page() {
                 <CharacterList presets={presets} searchQuery={searchQuery} />
             </div>
             <UploadGithubPresetDialog open={uploadOpen} onOpenChange={setUploadOpen} />
-        </MainLayout>
+        </>
     );
 }
