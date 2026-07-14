@@ -1,6 +1,6 @@
-# ChatLuna 预设编辑器
+# ChatLuna 预设站
 
-在线，专为 ChatLuna 设计的预设编辑器。
+用于创建、编辑、浏览和分享 ChatLuna 预设的在线站点。
 
 ## Roadmap
 
