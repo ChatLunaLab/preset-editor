@@ -35,6 +35,10 @@ import {
 } from "@/hooks/use-preset";
 import { Link, useNavigate } from "react-router";
 import { UploadPresetDialog } from "@/components/upload-preset-dialog";
+import {
+  forgetRememberedCharacterPath,
+  getRememberedCharacterPath,
+} from "@/lib/editor-route";
 
 interface CharacterListProps {
   presets: PresetModel[];
@@ -167,7 +171,7 @@ export function CharacterList({
             <TableRow key={character.id}>
               <TableCell>
                 <Link
-                  to={`/character/${character.id}`}
+                  to={getRememberedCharacterPath(character.id, character.type)}
                   className="font-medium hover:text-primary ml-4"
                 >
                   {character.name}
@@ -195,7 +199,12 @@ export function CharacterList({
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
                         onClick={() => {
-                          navigate(`/character/${character.id}`);
+                          navigate(
+                            getRememberedCharacterPath(
+                              character.id,
+                              character.type,
+                            ),
+                          );
                         }}
                       >
                         编辑
@@ -216,7 +225,7 @@ export function CharacterList({
                           setUploadOpen(true);
                         }}
                       >
-                        上传
+                        分享
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => {
@@ -254,6 +263,7 @@ export function CharacterList({
             <AlertDialogAction
               onClick={async () => {
                 await deletePreset(selectedCharacterId!);
+                forgetRememberedCharacterPath(selectedCharacterId!);
                 setOpenAlert(false);
                 setSelectedCharacterId(null);
               }}

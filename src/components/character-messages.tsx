@@ -60,18 +60,21 @@ export function CharacterMessagesForm({
                                         ? prompts[prompts.length - 1]
                                         : null;
 
+                                let role: "system" | "assistant" | "user";
+                                if (lastPrompt == null) {
+                                    role = "system";
+                                } else if (lastPrompt.role === "system") {
+                                    role = "assistant";
+                                } else if (lastPrompt.role === "assistant") {
+                                    role = "user";
+                                } else {
+                                    role = "assistant";
+                                }
+
                                 updatePreset?.("prompts", [
                                     ...prompts,
                                     {
-                                        role:
-                                            lastPrompt == null
-                                                ? "system"
-                                                : lastPrompt.role === "system"
-                                                ? "assistant"
-                                                : lastPrompt.role ===
-                                                  "assistant"
-                                                ? "user"
-                                                : "assistant",
+                                        role,
                                         content: "",
                                     },
                                 ]);

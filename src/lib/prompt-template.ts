@@ -5,6 +5,10 @@ export type TemplateEditorContext =
   | "author-note"
   | "knowledge"
   | "memory"
+  | "character-system"
+  | "character-input"
+  | "character-preset"
+  | "main-preset"
   | "generic";
 
 export type TemplateRangeKind =
@@ -29,17 +33,58 @@ export interface TemplateCompletionDefinition {
   snippet?: string;
 }
 
+const MAIN_TEMPLATE_CONTEXTS: TemplateEditorContext[] = [
+  "prompt",
+  "format-user",
+  "world-lore",
+  "author-note",
+  "knowledge",
+  "memory",
+  "main-preset",
+  "generic",
+];
+
 const COMMON_DEFINITIONS: TemplateCompletionDefinition[] = [
   { label: "date", detail: "当前 UTC 日期", type: "variable" },
   { label: "isotime", detail: "当前 ISO 时间", type: "variable" },
   { label: "isodate", detail: "当前 ISO 日期", type: "variable" },
   { label: "weekday", detail: "当前星期", type: "variable" },
-  { label: "message_id", detail: "当前消息 ID", type: "variable" },
-  { label: "is_group", detail: "是否为群聊", type: "variable" },
-  { label: "is_private", detail: "是否为私聊", type: "variable" },
-  { label: "idle_duration", detail: "距上次消息的时间", type: "variable" },
-  { label: "bot_id", detail: "机器人 ID", type: "variable" },
-  { label: "name", detail: "机器人名称", type: "variable" },
+  {
+    label: "message_id",
+    detail: "当前消息 ID",
+    type: "variable",
+    contexts: MAIN_TEMPLATE_CONTEXTS,
+  },
+  {
+    label: "is_group",
+    detail: "是否为群聊",
+    type: "variable",
+    contexts: MAIN_TEMPLATE_CONTEXTS,
+  },
+  {
+    label: "is_private",
+    detail: "是否为私聊",
+    type: "variable",
+    contexts: MAIN_TEMPLATE_CONTEXTS,
+  },
+  {
+    label: "idle_duration",
+    detail: "距上次消息的时间",
+    type: "variable",
+    contexts: MAIN_TEMPLATE_CONTEXTS,
+  },
+  {
+    label: "bot_id",
+    detail: "机器人 ID",
+    type: "variable",
+    contexts: MAIN_TEMPLATE_CONTEXTS,
+  },
+  {
+    label: "name",
+    detail: "机器人名称",
+    type: "variable",
+    contexts: MAIN_TEMPLATE_CONTEXTS,
+  },
   {
     label: "random",
     detail: "随机选择或生成随机整数",
@@ -74,34 +119,109 @@ const COMMON_DEFINITIONS: TemplateCompletionDefinition[] = [
 
 const CONTEXT_DEFINITIONS: TemplateCompletionDefinition[] = [
   {
+    label: "time",
+    detail: "当前时间",
+    type: "variable",
+    contexts: ["character-input", "character-preset"],
+  },
+  {
+    label: "trigger_reason",
+    detail: "本次回复的触发原因",
+    type: "variable",
+    contexts: ["character-input", "character-preset"],
+  },
+  {
+    label: "history_new",
+    detail: "最近的消息记录",
+    type: "variable",
+    contexts: ["character-input", "character-preset"],
+  },
+  {
+    label: "history_last",
+    detail: "最后一条消息",
+    type: "variable",
+    contexts: ["character-input", "character-preset"],
+  },
+  {
+    label: "status",
+    detail: "角色当前状态",
+    type: "variable",
+    contexts: ["character-input", "character-preset"],
+  },
+  {
+    label: "prompt",
+    detail: "当前触发消息原文",
+    type: "variable",
+    contexts: ["character-input", "character-preset"],
+  },
+  {
+    label: "built",
+    detail: "预设名称与会话 ID 等内置信息",
+    type: "variable",
+    contexts: ["character-input", "character-preset"],
+  },
+  {
+    label: "long_memory",
+    detail: "长期记忆，需要安装长期记忆扩展",
+    type: "function",
+    contexts: ["character-input", "character-preset"],
+    snippet: "long_memory('${scope}')}",
+  },
+  {
+    label: "memesluna",
+    detail: "表情包分类提示，需要安装表情包扩展",
+    type: "variable",
+    contexts: ["character-system", "character-preset"],
+  },
+  {
+    label: "base_url",
+    detail: "表情包服务基础地址",
+    type: "variable",
+    contexts: ["character-system", "character-preset"],
+  },
+  {
     label: "sender",
     detail: "发送者昵称",
     type: "variable",
-    contexts: ["format-user"],
+    contexts: ["format-user", "main-preset"],
   },
   {
     label: "sender_id",
     detail: "发送者 ID",
     type: "variable",
-    contexts: ["format-user"],
+    contexts: ["format-user", "main-preset"],
   },
   {
     label: "prompt",
     detail: "用户实际发送的内容",
     type: "variable",
-    contexts: ["format-user"],
+    contexts: ["format-user", "main-preset"],
   },
   {
     label: "user",
     detail: "发送者昵称",
     type: "variable",
-    contexts: ["prompt", "world-lore", "author-note", "knowledge", "memory"],
+    contexts: [
+      "prompt",
+      "world-lore",
+      "author-note",
+      "knowledge",
+      "memory",
+      "main-preset",
+    ],
   },
   {
     label: "user_id",
     detail: "发送者 ID",
     type: "variable",
-    contexts: ["prompt", "world-lore", "author-note", "knowledge", "memory"],
+    contexts: [
+      "prompt",
+      "world-lore",
+      "author-note",
+      "knowledge",
+      "memory",
+      "main-preset",
+    ],
   },
   {
     label: "long_history",
@@ -165,7 +285,10 @@ const CONTROL_DEFINITIONS: TemplateCompletionDefinition[] = [
 
 export function getTemplateDefinitions(context: TemplateEditorContext) {
   return [
-    ...COMMON_DEFINITIONS,
+    ...COMMON_DEFINITIONS.filter(
+      (definition) =>
+        definition.contexts == null || definition.contexts.includes(context),
+    ),
     ...CONTEXT_DEFINITIONS.filter(
       (definition) =>
         definition.contexts == null || definition.contexts.includes(context),

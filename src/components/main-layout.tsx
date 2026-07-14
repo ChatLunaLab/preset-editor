@@ -16,7 +16,8 @@ import { SettingsDialog } from "./settings-dialog";
 import { useRecentPresets } from "@/hooks/use-preset";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { Toaster } from "./ui/sonner";
-import { Link, Outlet, useLocation } from 'react-router';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router';
+import { getRememberedCharacterPath } from "@/lib/editor-route";
 
 function Sidebar({
     recentPresets,
@@ -72,7 +73,12 @@ function Sidebar({
                             {recentPresets.map((preset) => (
                                 <NavItem
                                     key={preset.id}
-                                    href={`/character/${preset.id}`}
+                                    href={() =>
+                                        getRememberedCharacterPath(
+                                            preset.id,
+                                            preset.type,
+                                        )
+                                    }
                                     label={preset.name}
                                 />
                             ))}
@@ -130,7 +136,10 @@ export function MainLayout() {
             </Sheet>
 
             {/* Main Content */}
-            <div className="flex-1 w-full h-screen overflow-auto">
+            <div
+                className="flex-1 w-full h-screen scroll-smooth overflow-auto"
+                data-main-scroll-container
+            >
                 <div className="md:hidden h-16 border-b" />{" "}
                 {/* Mobile header spacing */}
                 <Outlet />
@@ -143,17 +152,40 @@ export function MainLayout() {
 interface NavItemProps {
     icon?: React.ComponentType<{ className?: string }>;
     label: string;
-    href: string;
+    href: string | (() => string);
     compact?: boolean;
 }
 
 function NavItem({ icon: Icon, label, href, compact = false }: NavItemProps) {
     const { pathname } = useLocation();
+    const navigate = useNavigate();
+    const resolvedHref = typeof href === "function" ? href() : href;
   
-    const isActive = pathname === href || pathname.startsWith(`${href}/`);
+    const isActive =
+        pathname === resolvedHref || pathname.startsWith(`${resolvedHref}/`);
+
+    const handleClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+        if (typeof href !== "function") return;
+        if (
+            event.button !== 0 ||
+            event.metaKey ||
+            event.ctrlKey ||
+            event.shiftKey ||
+            event.altKey
+        ) {
+            return;
+        }
+
+        event.preventDefault();
+        navigate(href());
+    };
 
     return (
-        <Link to={href} title={compact ? label : undefined}>
+        <Link
+            to={resolvedHref}
+            title={compact ? label : undefined}
+            onClick={handleClick}
+        >
             <Button
                 variant="ghost"
                 aria-label={compact ? label : undefined}

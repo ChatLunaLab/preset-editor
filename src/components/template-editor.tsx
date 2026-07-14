@@ -30,18 +30,21 @@ import { cn } from "@/lib/utils";
 interface TemplateEditorProps {
   id?: string;
   value?: string;
-  onChange: (value: string) => void;
+  onChange?: (value: string) => void;
   context?: TemplateEditorContext;
   placeholder?: string;
   minRows?: number;
+  maxRows?: number;
   className?: string;
   ariaLabel?: string;
+  readOnly?: boolean;
 }
 
 const templateExtension = new Compartment();
 const templateTheme = new Compartment();
 const editorAttributes = new Compartment();
 const placeholderExtension = new Compartment();
+const readOnlyExtension = new Compartment();
 
 export function TemplateEditor({
   id,
@@ -50,13 +53,16 @@ export function TemplateEditor({
   context = "generic",
   placeholder,
   minRows = 5,
+  maxRows,
   className,
   ariaLabel = "ChatLuna 模板内容",
+  readOnly = false,
 }: TemplateEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<EditorView>(null);
   const valueRef = useRef(value);
   const onChangeRef = useRef(onChange);
+  const readOnlyRef = useRef(readOnly);
   const theme = useTheme();
 
   useEffect(() => {
@@ -75,12 +81,16 @@ export function TemplateEditor({
         placeholderExtension.of([]),
         templateExtension.of([]),
         templateTheme.of([]),
+        readOnlyExtension.of([
+          EditorState.readOnly.of(readOnlyRef.current),
+          EditorView.editable.of(!readOnlyRef.current),
+        ]),
         EditorView.updateListener.of((update) => {
           if (!update.docChanged) return;
           const nextValue = update.state.doc.toString();
           if (nextValue === valueRef.current) return;
           valueRef.current = nextValue;
-          onChangeRef.current(nextValue);
+          onChangeRef.current?.(nextValue);
         }),
       ],
     });
@@ -120,20 +130,34 @@ export function TemplateEditor({
   useEffect(() => {
     const view = editorRef.current;
     if (!view) return;
+    readOnlyRef.current = readOnly;
     view.dispatch({
-      effects: templateExtension.reconfigure(createTemplateExtensions(context)),
+      effects: readOnlyExtension.reconfigure([
+        EditorState.readOnly.of(readOnly),
+        EditorView.editable.of(!readOnly),
+      ]),
     });
-  }, [context]);
+  }, [readOnly]);
+
+  useEffect(() => {
+    const view = editorRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: templateExtension.reconfigure(
+        createTemplateExtensions(context, readOnly),
+      ),
+    });
+  }, [context, readOnly]);
 
   useEffect(() => {
     const view = editorRef.current;
     if (!view) return;
     view.dispatch({
       effects: templateTheme.reconfigure(
-        createEditorTheme(theme.resolvedTheme === "dark", minRows),
+        createEditorTheme(theme.resolvedTheme === "dark", minRows, maxRows),
       ),
     });
-  }, [minRows, theme.resolvedTheme]);
+  }, [maxRows, minRows, theme.resolvedTheme]);
 
   useEffect(() => {
     const view = editorRef.current;
@@ -170,25 +194,33 @@ export function TemplateEditor({
     <div className={cn(className)}>
       <div className="relative">
         <div ref={containerRef} />
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="absolute right-2 top-2 z-10 size-7 bg-background/80 text-muted-foreground backdrop-blur hover:text-foreground"
-          onClick={escapeSelection}
-          title="转义选区中的花括号；未选择文本时插入普通花括号"
-          aria-label="转义花括号"
-        >
-          <Braces className="size-3.5" />
-        </Button>
+        {!readOnly && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="absolute right-2 top-2 z-10 size-7 bg-background/80 text-muted-foreground backdrop-blur hover:text-foreground"
+            onClick={escapeSelection}
+            title="转义选区中的花括号；未选择文本时插入普通花括号"
+            aria-label="转义花括号"
+          >
+            <Braces className="size-3.5" />
+          </Button>
+        )}
       </div>
     </div>
   );
 }
 
-function createTemplateExtensions(context: TemplateEditorContext) {
+function createTemplateExtensions(
+  context: TemplateEditorContext,
+  readOnly: boolean,
+) {
+  const decorations = createDecorationPlugin(context);
+  if (readOnly) return [decorations];
+
   return [
-    createDecorationPlugin(context),
+    decorations,
     autocompletion({
       override: [(completionContext) => getCompletions(completionContext, context)],
       activateOnTyping: true,
@@ -273,12 +305,7 @@ function getCompletions(
       const completion = {
         label: definition.label,
         detail: definition.detail,
-        type:
-          definition.type === "keyword"
-            ? "keyword"
-            : definition.type === "function"
-              ? "function"
-              : "variable",
+        type: definition.type,
       };
 
       if (definition.snippet) {
@@ -341,53 +368,58 @@ function consumeClosingBrace(view: EditorView, position: number) {
     : position;
 }
 
-function createEditorTheme(dark: boolean, minRows: number) {
+function createEditorTheme(dark: boolean, minRows: number, maxRows?: number) {
   return EditorView.theme(
     {
       "&": {
-        border: "1px solid hsl(var(--input))",
+        border: "1px solid var(--input)",
         borderRadius: "var(--radius)",
-        backgroundColor: dark ? "hsl(var(--input) / 0.3)" : "transparent",
+        backgroundColor: dark
+          ? "color-mix(in oklch, var(--input) 30%, transparent)"
+          : "transparent",
         fontSize: "0.875rem",
         overflow: "hidden",
       },
       "&.cm-focused": {
         outline: "none",
-        borderColor: "hsl(var(--ring))",
+        borderColor: "var(--ring)",
       },
       ".cm-scroller": {
         minHeight: `${Math.max(minRows, 3) * 1.5}rem`,
-        maxHeight: "32rem",
+        maxHeight: maxRows
+          ? `${Math.max(maxRows, minRows, 3) * 1.5}rem`
+          : "32rem",
         fontFamily:
           "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
         lineHeight: "1.5rem",
       },
       ".cm-content": {
         padding: "0.65rem 2.75rem 0.65rem 0.75rem",
-        caretColor: "hsl(var(--foreground))",
+        caretColor: "var(--foreground)",
       },
       ".cm-line": { padding: "0" },
       ".cm-gutters": { display: "none" },
       ".cm-cursor, .cm-dropCursor": {
-        borderLeftColor: "hsl(var(--foreground))",
+        borderLeftColor: "var(--foreground)",
       },
       ".cm-selectionBackground, ::selection": {
-        backgroundColor: "hsl(var(--primary) / 0.16) !important",
+        backgroundColor:
+          "color-mix(in oklch, var(--primary) 16%, transparent) !important",
       },
       ".cm-placeholder": {
-        color: "hsl(var(--muted-foreground))",
+        color: "var(--muted-foreground)",
       },
       ".cm-tooltip": {
-        border: "1px solid hsl(var(--border))",
+        border: "1px solid var(--border)",
         borderRadius: "0.5rem",
-        backgroundColor: "hsl(var(--popover))",
-        color: "hsl(var(--popover-foreground))",
+        backgroundColor: "var(--popover)",
+        color: "var(--popover-foreground)",
         overflow: "hidden",
         boxShadow: "none",
       },
       ".cm-tooltip-autocomplete > ul > li[aria-selected]": {
-        backgroundColor: "hsl(var(--accent))",
-        color: "hsl(var(--accent-foreground))",
+        backgroundColor: "var(--accent)",
+        color: "var(--accent-foreground)",
       },
       ".cm-tooltip.cm-tooltip-lint": {
         border: "none",
@@ -433,7 +465,7 @@ function createEditorTheme(dark: boolean, minRows: number) {
       },
       ".cm-template-error": {
         textDecoration: "underline dotted",
-        textDecorationColor: "hsl(var(--muted-foreground))",
+        textDecorationColor: "var(--muted-foreground)",
         textUnderlineOffset: "3px",
       },
       ".cm-diagnosticAction": {

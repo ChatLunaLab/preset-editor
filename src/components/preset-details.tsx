@@ -4,7 +4,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Download, Eye, Pencil } from "lucide-react"
+import { Blend, Download, Eye, Pencil } from "lucide-react"
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router";
 import { downloadPreset, incrementDownloads, useSquarePresetForNetwork } from "@/hooks/use-square-presets"
@@ -18,6 +18,7 @@ import { PresetPreviewDialog } from "./preset-preview-dialog";
 import { Loader2 } from "lucide-react"
 import { importPreset } from '@/hooks/use-preset';
 import { toast } from 'sonner';
+import { buildCharacterPath } from "@/lib/editor-route";
 
 interface PresetDetailsProps {
   squarePreset: SquarePresetData
@@ -28,8 +29,42 @@ export function PresetDetails({ squarePreset }: PresetDetailsProps) {
   const navigate = useNavigate();
   const [open, setOpen] = React.useState(false);
   const [isEditLoading, setIsEditLoading] = React.useState(false);
+  const [isMixLoading, setIsMixLoading] = React.useState(false);
 
   const preset = useSquarePresetForNetwork(squarePreset)
+  const canImport = Boolean(preset) && !isEditLoading && !isMixLoading
+
+  const handleImport = async (target: "edit" | "mix") => {
+    if (!preset) return
+
+    if (target === "edit") {
+      setIsEditLoading(true)
+    } else {
+      setIsMixLoading(true)
+    }
+
+    try {
+      const id = await importPreset(preset)
+      toast.success("导入成功", {
+        description:
+          target === "edit"
+            ? `已成功导入预设: ${squarePreset.name}。可以开始编辑了！`
+            : `已成功导入预设: ${squarePreset.name}。可以开始混搭修改了！`,
+      })
+      navigate(
+        target === "edit"
+          ? buildCharacterPath(id, "edit", "basic")
+          : buildCharacterPath(id, "ai", "agent"),
+      )
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : String(error ?? "未知错误")
+      toast.error("导入失败", { description: message })
+    } finally {
+      setIsEditLoading(false)
+      setIsMixLoading(false)
+    }
+  }
 
 
   return (
@@ -54,7 +89,7 @@ export function PresetDetails({ squarePreset }: PresetDetailsProps) {
               {squarePreset.type === 'main' ? "主插件预设" : "伪装预设"}
             </Badge>
           </div>
-          <div className="flex shrink-0 gap-2">
+          <div className="flex shrink-0 flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
               <Eye className="h-4 w-4 mr-2" />
               预览
@@ -66,17 +101,33 @@ export function PresetDetails({ squarePreset }: PresetDetailsProps) {
               <Download className="h-4 w-4 mr-2" />
               下载
             </Button>
-            <Button size="sm" disabled={isEditLoading} onClick={() => {
-              setIsEditLoading(true);
-              importPreset(preset).then((id) => {
-                setIsEditLoading(false)
-                toast.success("导入成功", {
-                  description: `已成功导入预设: ${squarePreset.name}。可以开始编辑了！`,
-                })
-                navigate(`/character/${id}`);
-              });
-            }}>
-              {isEditLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Pencil className="h-4 w-4 mr-2" />}
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={!canImport || isMixLoading}
+              onClick={() => {
+                void handleImport("mix")
+              }}
+            >
+              {isMixLoading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Blend className="h-4 w-4 mr-2" />
+              )}
+              {isMixLoading ? "导入中" : "混搭"}
+            </Button>
+            <Button
+              size="sm"
+              disabled={!canImport || isEditLoading}
+              onClick={() => {
+                void handleImport("edit")
+              }}
+            >
+              {isEditLoading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Pencil className="h-4 w-4 mr-2" />
+              )}
               {isEditLoading ? "导入中" : "编辑"}
             </Button>
           </div>
@@ -131,7 +182,6 @@ export function MainPresetDetails(preset: RawPreset, squarePresetData: SquarePre
 }
 
 export function CharacterPresetDetails(preset: CharacterPresetTemplate, squarePresetData: SquarePresetData) {
-  console.log(preset.input)
   return (
     <div className="grid gap-6">
       <Card>
