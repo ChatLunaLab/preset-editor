@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
+    Bot,
     Computer,
     Database,
     Moon,
@@ -39,6 +40,7 @@ import {
 import { Separator } from "./ui/separator";
 import { useTheme } from "@/hooks/use-theme";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { AIModelSettings } from "@/components/ai/ai-model-settings";
 
 interface SettingsCategoryProps {
     title: string;
@@ -48,6 +50,7 @@ interface SettingsCategoryProps {
 
 const settingsCategories: SettingsCategoryProps[] = [
     { title: "通用", icon: <Settings className="h-4 w-4" />, value: "general" },
+    { title: "AI 模型", icon: <Bot className="h-4 w-4" />, value: "ai-model" },
     { title: "数据管理", icon: <Database className="h-4 w-4" />, value: "data" },
 ];
 
@@ -130,6 +133,13 @@ export function SettingsDialog({ compact = false }: { compact?: boolean }) {
                         </Select>
                     </div>
                     
+                </div>
+            );
+            break;
+        case "ai-model":
+            categoryContent = (
+                <div className="ml-1 h-full min-h-0">
+                    <AIModelSettings />
                 </div>
             );
             break;
@@ -217,8 +227,10 @@ export function SettingsDialog({ compact = false }: { compact?: boolean }) {
                 </Button>
             </DialogTrigger>
             <DialogContent className={cn(
-                "rounded-2xl",
-                isMobile ? "max-w-[90vw]" : "max-w-[400px] sm:max-w-[800px]"
+                "w-[calc(100%-2rem)] max-w-none rounded-2xl sm:max-w-[800px]",
+                isMobile
+                    ? "max-h-[calc(100vh-2rem)] overflow-y-auto"
+                    : "overflow-hidden"
             )}>
                 <DialogHeader>
                     <DialogTitle>设置</DialogTitle>
@@ -241,12 +253,12 @@ export function SettingsDialog({ compact = false }: { compact?: boolean }) {
                                 </Button>
                             ))}
                         </div>
-                        <div className="flex-1 p-4">
+                        <div className="flex-1 min-h-0 overflow-y-auto p-4">
                             {categoryContent}
                         </div>
                     </div>
                 ) : (
-                    <div className="flex h-[400px]">
+                    <div className="flex min-h-[400px]">
                         <div className="w-[200px] border-r flex flex-col pr-6">
                             {settingsCategories.map((category) => (
                                 <Button
@@ -263,7 +275,7 @@ export function SettingsDialog({ compact = false }: { compact?: boolean }) {
                                 </Button>
                             ))}
                         </div>
-                        <div className="flex-1 p-4">
+                        <div className="flex-1 min-h-0 overflow-hidden p-4">
                             {categoryContent}
                         </div>
                     </div>

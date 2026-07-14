@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 
 import { ThemeProvider } from "@/components/ui/theme";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { createHashRouter, RouterProvider } from "react-router";
 import Page from "./pages/app";
 import SquarePage from "./pages/square/page";
@@ -31,7 +32,7 @@ const router = createHashRouter([
                 element: <PresetViewPage />,
             },
             {
-                path: "character/:id",
+                path: "character/:id/:mode?/:tab?",
                 element: <CharacterEditPage />,
             },
             {
@@ -45,7 +46,9 @@ const router = createHashRouter([
 createRoot(document.getElementById("root")!).render(
     <StrictMode>
         <ThemeProvider>
-            <RouterProvider router={router}></RouterProvider>
+            <TooltipProvider>
+                <RouterProvider router={router}></RouterProvider>
+            </TooltipProvider>
         </ThemeProvider>
     </StrictMode>
 );

@@ -53,16 +53,16 @@ export function UploadPresetDialog({
                 fileName,
             });
 
-            toast.success("上传成功", {
+            toast.success("分享成功", {
                 description: `已创建 PR：${result.path}`,
             });
             setSuccessUrl(result.pull_request_url);
             setSuccessOpen(true);
             handleOpenChange(false);
         } catch (error) {
-            toast.error("上传失败", {
+            toast.error("分享失败", {
                 description:
-                    error instanceof Error ? error.message : "上传失败",
+                    error instanceof Error ? error.message : "分享失败",
             });
         } finally {
             setIsUploading(false);
@@ -74,9 +74,9 @@ export function UploadPresetDialog({
             <Dialog open={open} onOpenChange={handleOpenChange}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>上传预设</DialogTitle>
+                        <DialogTitle>分享预设</DialogTitle>
                         <DialogDescription>
-                            上传后将自动创建 Pull Request 到预设仓库。
+                            分享后将自动创建 Pull Request 到预设仓库。
                         </DialogDescription>
                     </DialogHeader>
 
@@ -121,7 +121,7 @@ export function UploadPresetDialog({
                             取消
                         </Button>
                         <Button type="button" onClick={handleUpload} disabled={isUploading}>
-                            {isUploading ? "上传中..." : "开始上传"}
+                            {isUploading ? "分享中..." : "分享预设"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -130,7 +130,7 @@ export function UploadPresetDialog({
             <Dialog open={successOpen} onOpenChange={setSuccessOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>上传成功</DialogTitle>
+                        <DialogTitle>分享成功</DialogTitle>
                         <DialogDescription>
                             已创建 Pull Request，请前往查看。
                         </DialogDescription>

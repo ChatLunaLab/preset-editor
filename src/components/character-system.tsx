@@ -1,12 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { CharacterPresetTemplate } from "@/types/preset";
 import { GetNestedType, NestedKeyOf } from "@/types/util";
 import { Button } from "./ui/button";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { TemplateEditor } from "./template-editor";
 
 
 interface CharacterSystemProps {
@@ -64,16 +64,17 @@ export function CharacterSystem({
                         <CardContent className="space-y-4 pt-6">
                             <div className="space-y-2">
                                 <Label htmlFor="description">系统提示词内容</Label>
-                                <Textarea
-                                    id="description"
+                                <TemplateEditor
+                                    id="character-system-prompt"
                                     placeholder="系统提示词内容"
-                                    className="min-h-[100px] rounded-lg"
-                                    rows={30}
+                                    context="character-system"
+                                    minRows={20}
+                                    ariaLabel="伪装预设系统提示词"
                                     value={preset.system}
-                                    onChange={(e) =>
+                                    onChange={(value) =>
                                         updatePreset?.(
                                             "system",
-                                            e.target.value.toString()
+                                            value
                                         )
                                     }
                                 />

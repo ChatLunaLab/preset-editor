@@ -85,7 +85,7 @@ function UploadGithubPresetDialogContent({
 
     const handleFile = async (file: File) => {
         if (!isAllowedFile(file)) {
-            toast.error("上传失败", {
+            toast.error("文件无效", {
                 description: "仅支持 .yml 或 .yaml 文件",
             });
             return;
@@ -98,7 +98,7 @@ function UploadGithubPresetDialogContent({
             setFileNameOverride(null);
             setPreset(model);
         } catch (error) {
-            toast.error("上传失败", {
+            toast.error("文件无效", {
                 description: "文件格式不正确，无法解析预设",
             });
             console.error(error);
@@ -111,7 +111,7 @@ function UploadGithubPresetDialogContent({
         }
 
         if (files.length > 1) {
-            toast.error("上传失败", {
+            toast.error("无法选择文件", {
                 description: "一次只能上传一个文件",
             });
             return;
@@ -134,15 +134,15 @@ function UploadGithubPresetDialogContent({
                 fileName,
             });
 
-            toast.success("上传成功", {
+            toast.success("分享成功", {
                 description: `已创建 PR：${result.path}`,
             });
             onUploadSuccess(result.pull_request_url);
             onOpenChange(false);
         } catch (error) {
-            toast.error("上传失败", {
+            toast.error("分享失败", {
                 description:
-                    error instanceof Error ? error.message : "上传失败",
+                    error instanceof Error ? error.message : "分享失败",
             });
         } finally {
             setIsUploading(false);
@@ -152,7 +152,7 @@ function UploadGithubPresetDialogContent({
     return (
         <DialogContent className="max-w-[90vw] sm:max-w-[520px] rounded-2xl">
             <DialogHeader>
-                <DialogTitle>上传预设</DialogTitle>
+                <DialogTitle>分享预设</DialogTitle>
                 <DialogDescription>
                     选择本地预设文件后将自动创建 Pull Request 到 GitHub 仓库。
                 </DialogDescription>
@@ -255,7 +255,7 @@ function UploadGithubPresetDialogContent({
                     onClick={handleUpload}
                     disabled={!preset || isUploading}
                 >
-                    {isUploading ? "上传中..." : "开始上传"}
+                    {isUploading ? "分享中..." : "分享预设"}
                 </Button>
             </DialogFooter>
         </DialogContent>
@@ -295,7 +295,7 @@ export function UploadGithubPresetDialog({
             <Dialog open={successOpen} onOpenChange={setSuccessOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>上传成功</DialogTitle>
+                        <DialogTitle>分享成功</DialogTitle>
                         <DialogDescription>
                             已创建 Pull Request，请前往查看。
                         </DialogDescription>

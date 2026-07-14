@@ -281,11 +281,6 @@ export default function SquarePage() {
                                     <PaginationLink
                                         onClick={() => setCurrentPage(page)}
                                         isActive={currentPage === page}
-                                        className={
-                                            currentPage === page
-                                                ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground'
-                                                : ''
-                                        }
                                     >
                                         {page}
                                     </PaginationLink>

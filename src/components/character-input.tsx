@@ -1,12 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { CharacterPresetTemplate } from "@/types/preset";
 import { GetNestedType, NestedKeyOf } from "@/types/util";
 import { Button } from "./ui/button";
 import { ChevronDown, Plus } from "lucide-react";
 import { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
+import { TemplateEditor } from "./template-editor";
 
 interface CharacterInputProps {
     updatePreset?: <K extends NestedKeyOf<CharacterPresetTemplate>>(
@@ -37,7 +37,7 @@ export function CharacterInput({
 
     return (
         <div className="grid gap-6 sm:grid-cols-1">
-            <Card className="gap-0 rounded-xl">
+            <Card className="gap-0 rounded-xl border shadow-sm ring-0">
                 <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>输入提示词</CardTitle>
                     <div className="flex gap-3">
@@ -79,15 +79,15 @@ export function CharacterInput({
                         <CardContent className="space-y-4 pt-6">
                             <div className="space-y-2">
                                 <Label htmlFor="description">格式化输入提示词内容</Label>
-                                <Textarea
-                                    id="description"
+                                <TemplateEditor
+                                    id="character-input-prompt"
                                     placeholder="格式化输入提示词内容"
-                                    className="min-h-[100px] rounded-lg"
-                                   // minRows={10}
+                                    context="character-input"
+                                    minRows={10}
+                                    maxRows={16}
+                                    ariaLabel="伪装预设格式化输入提示词"
                                     value={preset.input}
-                                    onChange={(e) =>
-                                        updateTextarea(e.target.value)
-                                    }
+                                    onChange={updateTextarea}
                                 />
                             </div>
                         </CardContent>

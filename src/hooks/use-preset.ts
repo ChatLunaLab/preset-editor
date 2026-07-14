@@ -6,32 +6,17 @@ import {
   isRawPreset,
   RawPreset,
 } from "@/types/preset";
-import { Dexie } from "dexie";
+import { stripSensitivePresetKeys } from "@/lib/preset-sanitizer";
+import { serializePresetData } from "@/lib/ai/generated-yaml";
+import { db, type PresetModel } from "@/lib/database";
 import { useLiveQuery } from "dexie-react-hooks";
-import { dump, load } from "js-yaml";
-import { toast } from "./use-toast";
+import { load } from "js-yaml";
+
+export type { PresetModel } from "@/lib/database";
 
 const PRESET_UPLOAD_API_URL =
   "https://api-chatluna-preset-market.dingyi222666.top/upload_preset";
 const DEFAULT_UPLOAD_TOKEN_ENCODED = "Y2hhdGx1bmE=";
-
-const db = new Dexie("chatluna-preset") as Dexie & {
-  presets: Dexie.Table<PresetModel, string>;
-};
-
-db.version(1).stores({
-  presets: "++id, type, lastModified, preset",
-});
-
-export interface PresetModel<
-  T extends "main" | "character" = "main" | "character",
-> {
-  id: string;
-  name: string;
-  type: T;
-  lastModified: number;
-  preset: T extends "main" ? RawPreset : CharacterPresetTemplate;
-}
 
 export function usePresets() {
   return useLiveQuery(() => db.presets.toArray(), [], [] as PresetModel[]);
@@ -255,9 +240,60 @@ export async function createCharacterPreset(name: string) {
 }
 
 export async function updatePreset(id: string, preset: PresetModel) {
-  return await db.presets.update(id, {
+  const updated = await db.presets.update(id, {
     ...preset,
     lastModified: Date.now(),
+  });
+  if (updated === 0) {
+    throw new Error(`预设不存在或已删除：${id}`);
+  }
+  return updated;
+}
+
+/**
+ * Atomic read-modify-write inside a single Dexie RW transaction.
+ * Only local get/validate/put — no network or model awaits inside.
+ * Returns the model actually stored (including lastModified).
+ */
+export async function withPresetTransaction(
+  id: string,
+  mutator: (latest: PresetModel) => PresetModel["preset"] | PresetModel,
+): Promise<PresetModel> {
+  return db.transaction("rw", db.presets, async () => {
+    const latest = await db.presets.get(id);
+    if (!latest) {
+      throw new Error(`预设不存在：${id}`);
+    }
+
+    const result = mutator(latest);
+    const nextPresetData =
+      result &&
+      typeof result === "object" &&
+      "preset" in result &&
+      "id" in result &&
+      "type" in result
+        ? (result as PresetModel).preset
+        : (result as PresetModel["preset"]);
+
+    const sanitized = stripSensitivePresetKeys(nextPresetData);
+    const name =
+      latest.type === "main"
+        ? (sanitized as RawPreset).keywords?.[0] || latest.name
+        : (sanitized as CharacterPresetTemplate).name || latest.name;
+    const lastModified = Date.now();
+    const nextModel: PresetModel = {
+      ...latest,
+      name,
+      preset: sanitized,
+      lastModified,
+    };
+
+    await db.presets.put(nextModel);
+    const stored = await db.presets.get(id);
+    if (!stored) {
+      throw new Error(`预设写入后丢失：${id}`);
+    }
+    return stored;
   });
 }
 
@@ -269,7 +305,7 @@ export function usePreset(id: string) {
   return useLiveQuery(
     () => db.presets.get(id),
     [id],
-    undefined as PresetModel | undefined,
+    null as PresetModel | null | undefined,
   );
 }
 
@@ -277,469 +313,48 @@ export function getPreset(id: string) {
   return db.presets.get(id);
 }
 
-const FALLBACK_TEMPLATE = `# 本文件最后更新时间：2026-04-03
-# 
-# 使用须知
-# 
-# 本预设依赖以下插件，请自行安装，不要忘记在修改后点击右上角的“重载配置”按钮：
-# - chatluna-long-memory
-#   - 插件用途：提供长期记忆功能
-#   - 配置说明：
-#     - 将所有“长期记忆引擎配置”改为“Basic”，“启用的记忆检索层”只勾选“群组层”
-# - chatluna-forward-msg
-#   - 插件用途：可选，提供合并转发记录读取、发送功能
-#   - 配置说明：
-#     - 在“协议选择”中启用“NapCat OneBot”或“LLBot OneBot”中你使用的协议
-#     - 在“图片描述服务”中选择一个多模态模型
-#     - 在 chatluna 插件的“对话行为选项”中启用：attachForwardMsgIdToContext
-#     - 在 chatluna-character 插件对应会话配置的“上下文”中启用：enableMessageId
-# - chatluna-plugin-common
-#   - 插件用途：提供一些通用的工具，包括本预设中用到的群管工具
-#   - 配置说明：
-#     - 只启用“群管插件”，其他选项全部关闭
-#     - 在“群管插件配置”中配置好“允许使用群管功能的成员 ID 列表”（可以要求 Bot 使用群管功能的人）和“允许使用群管功能的群 ID 白名单”
-# - chatluna-toolbox
-#   - 插件用途：提供戳一戳、贴表情、撤回消息等功能
-#   - 配置说明：
-#     - 在“原生工具”中启用“NapCat OneBot”或“LLBot OneBot”中你使用的协议
-#     - 在“XML 工具”中启用除了“enableBanXmlTool”之外的全部选项
-#     - 其他选项全部关闭
-# - chatluna-storage-service
-#   - 插件用途：提供文件存储服务，防止 QQ 图床链接过期
-#   - 配置说明：
-#     - 将“存储后端类型”改为“本地文件存储”
-#     - 将“Koishi 在公网或者局域网中的路径”改为你的环境中实际的路径，确保此路径可以被你的 Napcat 或 LLBot 正常访问。
-# 
-# 作者的话：
-# 感谢你使用了卢恩伪装插件预设模板！如有问题，敬请优先查询 ChatLuna 文档！
-
-name: CHARACTER（工具调用）
-
-nick_name:
-    - CHARACTER
-    - '@CHARACTER'
-
-input: |
-    # 当前时间
-    {time}
-
-    # 触发原因
-    {trigger_reason}
-    
-    # 请基于以下指示生成回复
-    - 严格遵循角色设定进行扮演
-    - 综合分析上下文，结合角色知识和状态生成回复
-    
-    # 最近消息
-    {history_new}
-    
-    # 最后消息
-    {history_last}
-    
-    # 当前状态
-    <status>
-    {status}
-    </status>
-
-    # 长期记忆
-    {long_memory('guild')}
-    
-    # 提示
-    - 消息最开头的“CHARACTER”（若存在）只是一个对你的称呼，并不与后面的词构成组合关系，如：“CHARACTER硬盘怎么扩容”实际上是在问“硬盘怎么扩容？”
-    - 并非每一条消息都需要回复
-    - 有时候图片没能附加在你的上下文中，如undefined，`;
-
-export function compilePresetForExport(preset: PresetModel, modelConfig: { apiUrl: string; token: string; selectedModel: string } | null) {
-  if (preset.type !== "character") {
-    return preset.preset;
-  }
-
-  const p = preset.preset as CharacterPresetTemplate;
-
-  // Assemble system prompt based on user's exact structure
-  const systemPrompt = `你现在正在QQ群聊中和群友聊天，你是一个普通的群友。你的网名是${p.name}，请根据以下信息进行角色扮演：
-
-个人信息 {{
-    网名：${p.name}
-    群id: ${p.bot_id || ""}
-    主人id: ${p.owner_id || ""}
-}}
-
-角色描述 {{
-    ${p.description || ""}
-}}
-
-性格 {{
-    ${p.personality || ""}
-}}
-
-爱好 {{
-    ${p.hobbies || ""}
-}}
-
-对话示例 {{
-    ${p.dialogue_examples || ""}
-}}
-
-聊天风格 {{
-    ${p.chat_style || ""}
-}}
-
-聊天行为 {{
-    ${p.chat_behavior || ""}
-}}
-
-人际关系 {{
-    ${p.relationship || ""}
-}}
-
-表情包 {{
-    ${p.stickers || ""}
-}}`;
-
-  // Assemble input prompt
-  const inputPrompt = ` 当前时间：{time}
-请基于以下指示生成回复：
-
-1. 严格遵循角色设定进行扮演
-2. 综合分析上下文，结合角色知识和状态生成独特回复
-3. 表情包类型(sticker)：仅限使用 {stickers}
-
-消息历史（重点关注最后一条）：
-{{
-    最近消息：
-    {history_new}
-
-    最后消息：
-    {history_last}
-}}
-
-{{?search 如果有搜索结果，请参考以下实时数据：
-
-<Internet>
-{{search}}
-</Internet>
-
-注意事项：
-1. 这些是最新的实时数据，优先于你已有的知识
-2. 保持自然对话，不要生硬地重复数据
-3. 根据对话场景选择性使用这些信息
-4. 保持你的个性和说话风格
-5. 可以灵活运用但不要篡改原始数据}}
-
-当前状态（影响回复风格和思考方式）：
-{{
-    {status}
-}}
-
-请按以下格式输出：
-
-<status>
-// 更新后的状态
-</status>
-
-<think>
-// 角色视角的思考过程
-</think>
-
-<message_part>
- <message name='${p.name}' id='0' type='text' sticker='表情包类型'>回复内容（40字内）</message>
-</message_part>`;
-
-  // Return the compiled YAML structure
-  return {
-    name: p.name,
-    nick_name: p.nick_name,
-    mute_keyword: p.mute_keyword || [],
-    status: p.status || `好感度: '10'\n心情: "开心"\n状态: "正在和群友探讨人生"\n记忆: "dingyi: 好厉害的群友，懂得那么多哲学道理"\n动作: "拿起手机聊天"`,
-    system: systemPrompt,
-    input: inputPrompt,
-    bot_id: p.bot_id || "",
-    owner_id: p.owner_id || "",
-    api_url: modelConfig?.apiUrl || "",
-    api_token: modelConfig?.token || "",
-    model: modelConfig?.selectedModel || "",
-  };
-}
-
-export const exportPreset = async (preset: PresetModel) => {
-  if (preset.type !== "character") {
-    // For main presets, fall back to standard download
-    const blob = new Blob([makeYaml(preset)], {
-      type: "application/yaml;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    const name = (preset.preset as RawPreset).keywords[0];
-    a.download = `${name}.yml`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    return;
-  }
-
-  // 1. Check if model configuration exists and is valid
-  const saved = localStorage.getItem("chatluna_model_config");
-  if (!saved) {
-    toast({
-      title: "请先配置模型",
-      description: "未检测到配置模型，请在右上角进行【模型配置】后再导出！",
-      variant: "destructive",
-    });
-    throw new Error("Model not configured");
-  }
-
-  const config = JSON.parse(saved);
-  if (!config.apiUrl || !config.selectedModel) {
-    toast({
-      title: "请先配置模型",
-      description: "模型配置不完整，请确保填写了 API 地址并选择了模型！",
-      variant: "destructive",
-    });
-    throw new Error("Model not configured fully");
-  }
-
-  // Check if model is usable
-  toast({
-    title: "检测模型中...",
-    description: "正在验证您的模型配置是否可用...",
-  });
-
-  try {
-    const verifyHeaders: Record<string, string> = { "Accept": "application/json" };
-    if (config.token) {
-      verifyHeaders["Authorization"] = `Bearer ${config.token}`;
-      verifyHeaders["x-api-key"] = config.token;
-      verifyHeaders["x-goog-api-key"] = config.token;
-    }
-    let verifyUrl = `${config.apiUrl}/models`;
-    if (config.token && (config.apiUrl.includes("google") || config.apiUrl.includes("googleapis.com"))) {
-      const separator = verifyUrl.includes("?") ? "&" : "?";
-      verifyUrl = `${verifyUrl}${separator}key=${encodeURIComponent(config.token)}`;
-    }
-    
-    const res = await fetch(verifyUrl, { headers: verifyHeaders });
-    if (!res.ok) {
-      throw new Error(`HTTP 状态码: ${res.status}`);
-    }
-  } catch (err: any) {
-    toast({
-      title: "模型不可用",
-      description: `无法连接到您的模型配置服务器: ${err.message || err}。请检查您的【模型配置】！`,
-      variant: "destructive",
-    });
-    throw new Error("Model not usable");
-  }
-
-  // 2. Request the template preset from Github
-  toast({
-    title: "获取预设模板...",
-    description: "正在从 GitHub 获取最新 default-tool-call 模板...",
-  });
-
-  let templateContent = "";
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
-    const res = await fetch("https://raw.githubusercontent.com/ChatLunaLab/chatluna-character/main/resources/presets/default-tool-call.yml", {
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
-    if (res.ok) {
-      templateContent = await res.text();
-    } else {
-      throw new Error(`HTTP ${res.status}`);
-    }
-  } catch (e) {
-    console.warn("Fetch default-tool-call template from github failed, using fallback.", e);
-    templateContent = FALLBACK_TEMPLATE;
-  }
-
-  // 3. Summarize current preset information (basic and details) to Markdown
-  const p = preset.preset as CharacterPresetTemplate;
-  const mdContent = `
-# 角色预设设定信息汇总
-
-- **Bot名字 (name)**: ${p.name || ""}
-- **Bot昵称 (nick_name)**: ${(p.nick_name || []).join(", ")}
-- **Bot ID (bot_id)**: ${p.bot_id || ""}
-- **主人 ID (owner_id)**: ${p.owner_id || ""}
-
-## 角色描述 (description)
-${p.description || "未填写"}
-
-## 性格 (personality)
-${p.personality || "未填写"}
-
-## 爱好 (hobbies)
-${p.hobbies || "未填写"}
-
-## 对话示例 (dialogue_examples)
-${p.dialogue_examples || "未填写"}
-
-## 聊天风格 (chat_style)
-${p.chat_style || "未填写"}
-
-## 聊天行为 (chat_behavior)
-${p.chat_behavior || "未填写"}
-
-## 人际关系 (relationship)
-${p.relationship || "未填写"}
-
-## 表情包 (stickers)
-${p.stickers || "未填写"}
-`;
-
-  // 4. Call the configured model using /chat/completions
-  toast({
-    title: "AI 正在生成预设...",
-    description: `调用模型 ${config.selectedModel} 生成符合规范的角色扮演预设中，请稍候...`,
-  });
-
-  const apiHeaders: Record<string, string> = {
-    "Content-Type": "application/json",
-    "Accept": "application/json"
-  };
-  if (config.token) {
-    apiHeaders["Authorization"] = `Bearer ${config.token}`;
-    apiHeaders["x-api-key"] = config.token;
-    apiHeaders["x-goog-api-key"] = config.token;
-  }
-  let apiCompletionUrl = `${config.apiUrl}/chat/completions`;
-  if (config.token && (config.apiUrl.includes("google") || config.apiUrl.includes("googleapis.com"))) {
-    const separator = apiCompletionUrl.includes("?") ? "&" : "?";
-    apiCompletionUrl = `${apiCompletionUrl}${separator}key=${encodeURIComponent(config.token)}`;
-  }
-
-  const prompt = `你是一个专业的 ChatLuna 角色预设编写助手。你需要将用户提供的角色设定 Markdown 信息，精细且完美地填充到给定的 ChatLuna 预设模板 YAML 中，并生成符合 ChatLuna 工具调用规范的角色预设。
-
-【参考教程】：
-请根据以下教程的规范（教程地址：https://chatluna.chat/ecosystem/other/character.html）来构建预设的内容，尤其是 name、nick_name，以及核心 system / input 字段 of the 整合，并结合预设工具调用的聊天风格进行生成。
-
-【预设模板 YAML (default-tool-call.yml)】：
-\`\`\`yaml
-${templateContent}
-\`\`\`
-
-【用户角色设定 Markdown 信息】：
-\`\`\`markdown
-${mdContent}
-\`\`\`
-
-【重要生成规则】：
-1. 认真阅读用户的“角色设定 Markdown 信息”，完美融入并将其实际填充并整合进模板中的 \`system\` 和相关字段中（如果模板内缺失 \`system\` 字段，需主动生成它）。
-2. 在生成的 YAML 结构最外层，必须附带以下三个属性字段：
-   - \`api_url\`: "${config.apiUrl}"
-   - \`api_token\`: "${config.token}"
-   - \`model\`: "${config.selectedModel}"
-3. 输出结果必须是【纯净的、完全合法的 YAML 格式】代码块，并使用 \`\`\`yaml 和 \`\`\` 包裹起来。
-4. 不要进行任何解释或带有废话，只需直接提供可被解析的 YAML 内容。
-5. 确保多行字符串保持合理的缩进，符合 YAML 的标准规范（使用 | 或 |- 等标示多行文本）。`;
-
-  const requestBody = {
-    model: config.selectedModel,
-    messages: [
-      {
-        role: "system",
-        content: "You are a specialized AI assistant that outputs only valid YAML character presets for ChatLuna. You never output conversational chat or preamble, only a raw code block containing the correctly filled YAML."
-      },
-      {
-        role: "user",
-        content: prompt
-      }
-    ],
-    temperature: 0.1
-  };
-
-  let aiResponseText = "";
-  try {
-    const response = await fetch(apiCompletionUrl, {
-      method: "POST",
-      headers: apiHeaders,
-      body: JSON.stringify(requestBody)
-    });
-
-    if (!response.ok) {
-      throw new Error(`AI 请求失败，HTTP 状态码: ${response.status}`);
-    }
-
-    const responseData = await response.json();
-    const content = responseData.choices?.[0]?.message?.content;
-    if (!content) {
-      throw new Error("AI 返回了空回复");
-    }
-    aiResponseText = content;
-  } catch (err: any) {
-    toast({
-      title: "AI 生成失败",
-      description: `调用模型生成预设失败: ${err.message || err}。请确保模型能够正常进行对话！`,
-      variant: "destructive",
-    });
-    throw err;
-  }
-
-  // 5. Download the AI-generated preset
-  let finalYaml = aiResponseText;
-  const yamlBlockRegex = /```yaml\n([\s\S]*?)\n```/;
-  const codeBlockRegex = /```\n([\s\S]*?)\n```/;
-  
-  const matchYaml = aiResponseText.match(yamlBlockRegex);
-  if (matchYaml) {
-    finalYaml = matchYaml[1];
-  } else {
-    const matchCode = aiResponseText.match(codeBlockRegex);
-    if (matchCode) {
-      finalYaml = matchCode[1];
-    }
-  }
-
-  finalYaml = finalYaml.trim();
-
-  // Download the compiled YAML
-  const blob = new Blob([finalYaml], {
+export const exportPreset = (preset: PresetModel) => {
+  const blob = new Blob([makeYaml(preset)], {
     type: "application/yaml;charset=utf-8",
   });
-  const downloadUrl = URL.createObjectURL(blob);
+  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = downloadUrl;
-  const fileName = p.name ? `${p.name}.yml` : "character_preset.yml";
-  a.download = fileName;
+  a.href = url;
+  const name =
+    preset.type === "character"
+      ? (preset.preset as CharacterPresetTemplate).name
+      : (preset.preset as RawPreset).keywords[0];
+  a.download = `${name}.yml`;
+
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(downloadUrl);
-
-  toast({
-    title: "预设导出成功！",
-    description: `已通过 AI 生成并成功下载预设文件: ${fileName}`,
-  });
+  URL.revokeObjectURL(url);
 };
 
 export async function importPreset(
   preset: string | RawPreset | CharacterPresetTemplate,
 ) {
-  let rawPreset =
+  const rawPreset =
     typeof preset === "string"
       ? (load(preset) as RawPreset | CharacterPresetTemplate)
       : preset;
 
   if (isRawPreset(rawPreset)) {
-    rawPreset = rawPreset as RawPreset;
+    const sanitized = stripSensitivePresetKeys(rawPreset);
     return await createPreset({
-      name: rawPreset.keywords[0],
+      name: sanitized.keywords[0],
       type: "main",
-      preset: rawPreset,
+      preset: sanitized,
     });
   }
 
   if (isCharacterPresetTemplate(rawPreset)) {
-    rawPreset = rawPreset as CharacterPresetTemplate;
+    const sanitized = stripSensitivePresetKeys(rawPreset);
     return await createPreset({
-      name: rawPreset.name,
+      name: sanitized.name,
       type: "character",
-      preset: rawPreset,
+      preset: sanitized,
     });
   }
 
@@ -747,17 +362,7 @@ export async function importPreset(
 }
 
 export function makeYaml(preset: PresetModel) {
-  let modelConfig = null;
-  try {
-    const saved = localStorage.getItem("chatluna_model_config");
-    if (saved) {
-      modelConfig = JSON.parse(saved);
-    }
-  } catch (e) {
-    console.error("Failed to load model config", e);
-  }
-  const compiled = compilePresetForExport(preset, modelConfig);
-  return dump(compiled, { lineWidth: -1 });
+  return serializePresetData(preset.preset);
 }
 
 export interface UploadPresetOptions {
