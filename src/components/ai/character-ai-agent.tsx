@@ -55,6 +55,8 @@ import { isAIModelConfigReady } from "@/lib/ai/model-config";
 import {
   getAgentChatSessionId,
   getOrCreateAgentChatSession,
+  handleAgentChatPersistenceError,
+  type AgentChatInterjection,
   type AgentChatSession,
 } from "@/lib/ai/agent-chat-session-manager";
 import {
@@ -66,6 +68,7 @@ import {
   SearchIcon,
   Settings2,
   SparklesIcon,
+  SquareIcon,
   WrenchIcon,
   XIcon,
 } from "lucide-react";
@@ -138,7 +141,6 @@ export function CharacterAIAgent({
     activeConfig,
     isActiveReady,
     updateConfig,
-    setActiveConfigId,
   } = useAIModelConfigs();
   const reasoningLevels = useModelReasoningLevels(
     activeConfig ?? {
@@ -148,6 +150,7 @@ export function CharacterAIAgent({
       apiKey: "",
       baseUrl: "",
       model: "",
+      availableModels: [],
       reasoning: "medium",
     },
   );
@@ -183,7 +186,7 @@ export function CharacterAIAgent({
       reasoning={reasoning}
       reasoningLevels={reasoningLevels}
       modelOptions={configs.filter(isAIModelConfigReady)}
-      onModelChange={setActiveConfigId}
+      onModelIdChange={(model) => updateConfig(activeConfig.id, { model })}
       onReasoningChange={(nextReasoning) =>
         updateConfig(activeConfig.id, { reasoning: nextReasoning })
       }
@@ -201,7 +204,7 @@ function CharacterAIAgentSession({
   reasoning,
   reasoningLevels,
   modelOptions,
-  onModelChange,
+  onModelIdChange,
   onReasoningChange,
   onNewChatActionChange,
 }: {
@@ -213,11 +216,17 @@ function CharacterAIAgentSession({
   reasoning: AIReasoningLevel | undefined;
   reasoningLevels: AIReasoningLevel[];
   modelOptions: AIModelConfig[];
-  onModelChange: (modelId: string) => void;
+  onModelIdChange: (model: string) => void;
   onReasoningChange: (reasoning: AIReasoningLevel) => void;
   onNewChatActionChange?: CharacterAIAgentProps["onNewChatActionChange"];
 }) {
+  const expectedSessionId = getAgentChatSessionId(presetType, presetId);
   const [session, setSession] = useState<AgentChatSession | null>(null);
+  const [sessionError, setSessionError] = useState<{
+    sessionId: string;
+    message: string;
+  } | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -227,27 +236,77 @@ function CharacterAIAgentSession({
       name,
       reasoning,
       webSearch: false,
-    }).then((nextSession) => {
-      if (!cancelled) {
-        setSession(nextSession);
-      }
-    });
+    })
+      .then((nextSession) => {
+        if (!cancelled) {
+          setSession(nextSession);
+          setSessionError(null);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setSession(null);
+          setSessionError({
+            sessionId: getAgentChatSessionId(presetType, presetId),
+            message:
+              error instanceof Error
+                ? sanitizeAIErrorMessage(error.message)
+                : "会话初始化失败，请重试。",
+          });
+        }
+      });
 
     return () => {
       cancelled = true;
     };
     // Session identity is preset-scoped; runtime is synced separately.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- preset identity only
-  }, [presetId, presetType]);
+    // retryCount intentionally re-runs the same initialization path.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- preset identity + retry only
+  }, [presetId, presetType, retryCount]);
 
   useEffect(() => {
-    if (session?.id !== getAgentChatSessionId(presetType, presetId)) return;
+    if (session?.id !== expectedSessionId) return;
     session.updateRuntime({ modelConfig, name, reasoning });
-  }, [session, presetId, presetType, modelConfig, name, reasoning]);
+  }, [session, expectedSessionId, modelConfig, name, reasoning]);
 
+  const activeSessionError =
+    sessionError?.sessionId === expectedSessionId
+      ? sessionError.message
+      : null;
   const sessionMatches =
-    session !== null &&
-    session.id === getAgentChatSessionId(presetType, presetId);
+    session !== null && session.id === expectedSessionId;
+
+  if (activeSessionError) {
+    return (
+      <Conversation className="min-h-[calc(100dvh-11rem)] flex-none overflow-visible">
+        <ConversationContent className="min-h-full">
+          <ConversationEmptyState>
+            <div className="flex flex-col items-center gap-3">
+              <div className="text-muted-foreground">
+                <XIcon className="size-8" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-medium text-sm">会话加载失败</h3>
+                <p className="text-muted-foreground text-sm">
+                  {activeSessionError}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSessionError(null);
+                  setRetryCount((count) => count + 1);
+                }}
+                className="mt-1 rounded-full border bg-card/35 px-4 py-1.5 text-sm font-medium transition-colors hover:border-foreground/15 hover:bg-accent/55 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:outline-none"
+              >
+                重试
+              </button>
+            </div>
+          </ConversationEmptyState>
+        </ConversationContent>
+      </Conversation>
+    );
+  }
 
   if (!sessionMatches || !session) {
     return <div className="h-full" />;
@@ -255,13 +314,14 @@ function CharacterAIAgentSession({
 
   return (
     <CharacterAIAgentChat
+      key={session.id}
       session={session}
       modelLabel={modelLabel}
       reasoning={reasoning}
       reasoningLevels={reasoningLevels}
       activeModelId={modelConfig.id}
       modelOptions={modelOptions}
-      onModelChange={onModelChange}
+      onModelIdChange={onModelIdChange}
       onReasoningChange={onReasoningChange}
       onNewChatActionChange={onNewChatActionChange}
     />
@@ -275,7 +335,7 @@ function CharacterAIAgentChat({
   reasoningLevels,
   activeModelId,
   modelOptions,
-  onModelChange,
+  onModelIdChange,
   onReasoningChange,
   onNewChatActionChange,
 }: {
@@ -285,7 +345,7 @@ function CharacterAIAgentChat({
   reasoningLevels: AIReasoningLevel[];
   activeModelId: string;
   modelOptions: AIModelConfig[];
-  onModelChange: (modelId: string) => void;
+  onModelIdChange: (model: string) => void;
   onReasoningChange: (reasoning: AIReasoningLevel) => void;
   onNewChatActionChange?: CharacterAIAgentProps["onNewChatActionChange"];
 }) {
@@ -304,6 +364,9 @@ function CharacterAIAgentChat({
   const [webSearch, setWebSearch] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [thinkingMessageIndex, setThinkingMessageIndex] = useState(0);
+  const [interjections, setInterjections] = useState<AgentChatInterjection[]>(
+    () => session.getInterjections(),
+  );
   const [inputContainerRef, inputBounds] = useMeasure();
   const messagesRef = useRef(messages);
   const inputHeight = Math.max(inputBounds.height, 112);
@@ -312,6 +375,10 @@ function CharacterAIAgentChat({
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
+
+  useEffect(() => {
+    return session.subscribeInterjections(setInterjections);
+  }, [session]);
 
   useEffect(() => {
     session.updateRuntime({ webSearch });
@@ -323,7 +390,9 @@ function CharacterAIAgentChat({
 
   useEffect(() => {
     return () => {
-      void session.flushSave(messagesRef.current);
+      void session
+        .flushSave(messagesRef.current)
+        .catch(handleAgentChatPersistenceError);
     };
   }, [session]);
 
@@ -339,16 +408,29 @@ function CharacterAIAgentChat({
 
   const handleSubmit = async (message: PromptInputMessage) => {
     const text = message.text.trim();
-    if (!text || isBusy) return;
+    if (!text) return;
     const createdAt = Date.now();
+    if (isBusy) {
+      session.enqueueInterjection(text, createdAt);
+      setInput("");
+      return;
+    }
     session.updateRuntime({ webSearch });
     clearError();
     setInput("");
-    await sendMessage({ text, metadata: { createdAt } });
+    try {
+      await sendMessage({ text, metadata: { createdAt } });
+    } catch (error) {
+      setInput((current) => current || message.text);
+      throw error;
+    }
   };
 
   const handleSuggestion = async (suggestion: string, createdAt: number) => {
-    if (isBusy) return;
+    if (isBusy) {
+      session.enqueueInterjection(suggestion, createdAt);
+      return;
+    }
     session.updateRuntime({ webSearch });
     clearError();
     await sendMessage({
@@ -373,7 +455,7 @@ function CharacterAIAgentChat({
   const handleClearChat = useCallback(() => {
     clearError();
     setWebSearch(false);
-    void session.clear();
+    void session.clear().catch(handleAgentChatPersistenceError);
   }, [clearError, session]);
 
   useEffect(() => {
@@ -520,6 +602,19 @@ function CharacterAIAgentChat({
               </MessageContent>
             </Message>
           )}
+
+          {interjections.map((entry) => (
+            <Message key={entry.id} from="user" className="opacity-75">
+              <MessageContent>
+                <MessageResponse>{entry.text}</MessageResponse>
+                <span className="text-right text-[11px] text-muted-foreground">
+                  {entry.state === "queued"
+                    ? "等待下次工具调用"
+                    : "已插入当前任务"}
+                </span>
+              </MessageContent>
+            </Message>
+          ))}
         </ConversationContent>
         <ConversationScrollButton
           className="border-border/60 bg-muted/70 shadow-md shadow-black/10 backdrop-blur-xl hover:bg-muted/85 dark:bg-card/70 dark:shadow-black/30 dark:hover:bg-card/85"
@@ -532,7 +627,7 @@ function CharacterAIAgentChat({
         className="absolute inset-x-0 bottom-3 z-10 mx-auto w-full max-w-4xl rounded-3xl bg-muted/75 shadow-lg shadow-black/10 backdrop-blur-xl dark:bg-card/75 dark:shadow-black/40"
       >
         <PromptInput
-          className="[&_[data-slot=input-group]]:rounded-3xl [&_[data-slot=input-group]]:border-border/70 [&_[data-slot=input-group]]:bg-transparent [&_[data-slot=input-group]]:shadow-none [&_[data-slot=input-group]]:focus-within:bg-transparent [&_[data-slot=input-group]]:dark:bg-transparent [&_[data-slot=input-group]]:dark:focus-within:bg-transparent [&_[data-slot=input-group]]:has-[[data-slot=input-group-control]:focus-visible]:border-border/70 [&_[data-slot=input-group]]:has-[[data-slot=input-group-control]:focus-visible]:ring-0"
+          className="[&_[data-slot=input-group]]:rounded-3xl [&_[data-slot=input-group]]:border-border/70 [&_[data-slot=input-group]]:bg-transparent [&_[data-slot=input-group]]:shadow-none [&_[data-slot=input-group]]:focus-within:bg-transparent [&_[data-slot=input-group]]:has-disabled:bg-transparent [&_[data-slot=input-group]]:has-disabled:opacity-100 [&_[data-slot=input-group]]:dark:bg-transparent [&_[data-slot=input-group]]:dark:focus-within:bg-transparent [&_[data-slot=input-group]]:dark:has-disabled:bg-transparent [&_[data-slot=input-group]]:has-[[data-slot=input-group-control]:focus-visible]:border-border/70 [&_[data-slot=input-group]]:has-[[data-slot=input-group-control]:focus-visible]:ring-0"
           onSubmit={handleSubmit}
         >
           <PromptInputBody>
@@ -599,14 +694,24 @@ function CharacterAIAgentChat({
                 reasoning={reasoning}
                 reasoningLevels={reasoningLevels}
                 disabled={isBusy}
-                onModelChange={onModelChange}
+                onModelIdChange={onModelIdChange}
                 onReasoningChange={onReasoningChange}
               />
+              {isBusy && (
+                <PromptInputButton
+                  type="button"
+                  size="icon-sm"
+                  className="rounded-full active:!translate-y-0"
+                  aria-label="停止当前任务"
+                  onClick={stop}
+                >
+                  <SquareIcon className="size-4" />
+                </PromptInputButton>
+              )}
               <PromptInputSubmit
-                className="rounded-full"
-                status={status}
-                onStop={stop}
-                disabled={!input.trim() && !isBusy}
+                className="rounded-full disabled:opacity-100"
+                status={isBusy ? "ready" : status}
+                disabled={!input.trim()}
               />
             </div>
           </PromptInputFooter>
@@ -648,7 +753,7 @@ function ModelReasoningMenu({
   reasoning,
   reasoningLevels,
   disabled,
-  onModelChange,
+  onModelIdChange,
   onReasoningChange,
 }: {
   activeModelId: string;
@@ -657,13 +762,20 @@ function ModelReasoningMenu({
   reasoning: AIReasoningLevel | undefined;
   reasoningLevels: AIReasoningLevel[];
   disabled: boolean;
-  onModelChange: (modelId: string) => void;
+  onModelIdChange: (model: string) => void;
   onReasoningChange: (reasoning: AIReasoningLevel) => void;
 }) {
   const modelId = modelLabel.split("/").pop() || modelLabel;
+  const activeConfig = modelOptions.find((model) => model.id === activeModelId);
+  const availableModels = activeConfig?.availableModels ?? [];
+  const selectableModels = availableModels.includes(modelLabel)
+    ? availableModels
+    : [modelLabel, ...availableModels];
+  const modelMenuAlignOffset =
+    reasoningLevels.length > 0 ? -(reasoningLevels.length * 32 + 37) : -4;
 
   return (
-    <DropdownMenu>
+    <DropdownMenu dir="rtl">
       <DropdownMenuTrigger asChild disabled={disabled}>
         <PromptInputButton
           className="h-8 max-w-56 rounded-full px-3 text-xs text-muted-foreground"
@@ -680,7 +792,11 @@ function ModelReasoningMenu({
           )}
         </PromptInputButton>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" side="top" className="w-56">
+      <DropdownMenuContent
+        align="end"
+        side="top"
+        className="max-h-none w-56 overflow-visible [direction:ltr]"
+      >
         {reasoningLevels.length > 0 && (
           <>
             <DropdownMenuLabel>Reasoning</DropdownMenuLabel>
@@ -707,34 +823,27 @@ function ModelReasoningMenu({
           <DropdownMenuSubTrigger className="px-2 py-1.5">
             <span className="min-w-0 flex-1 truncate">{modelId}</span>
           </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-64">
-            <DropdownMenuLabel>模型</DropdownMenuLabel>
+          <DropdownMenuSubContent
+            sideOffset={4}
+            alignOffset={modelMenuAlignOffset}
+            avoidCollisions={false}
+            className="w-72 bg-popover backdrop-blur-md supports-[backdrop-filter]:bg-popover [direction:ltr]"
+          >
+            <DropdownMenuLabel>Model</DropdownMenuLabel>
             <DropdownMenuRadioGroup
-              value={activeModelId}
-              onValueChange={onModelChange}
+              value={modelLabel}
+              onValueChange={onModelIdChange}
+              className="max-h-56 overflow-y-auto"
             >
-              {modelOptions.map((model) => {
-                const optionModelId =
-                  model.model.split("/").pop() || model.model;
-                return (
-                  <DropdownMenuRadioItem
-                    key={model.id}
-                    value={model.id}
-                    className="items-start px-2 py-1.5"
-                  >
-                    <span className="min-w-0">
-                      <span className="block truncate">
-                        {model.name || optionModelId}
-                      </span>
-                      {model.name && model.name !== optionModelId && (
-                        <span className="block truncate text-xs text-muted-foreground">
-                          {model.model}
-                        </span>
-                      )}
-                    </span>
-                  </DropdownMenuRadioItem>
-                );
-              })}
+              {selectableModels.map((model) => (
+                <DropdownMenuRadioItem
+                  key={model}
+                  value={model}
+                  className="px-2 py-1.5"
+                >
+                  <span className="truncate">{model}</span>
+                </DropdownMenuRadioItem>
+              ))}
             </DropdownMenuRadioGroup>
           </DropdownMenuSubContent>
         </DropdownMenuSub>

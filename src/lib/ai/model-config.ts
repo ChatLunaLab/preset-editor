@@ -29,6 +29,13 @@ function isReasoningLevel(value: unknown): value is AIReasoningLevel {
   );
 }
 
+function normalizeAvailableModels(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.filter((model): model is string => typeof model === "string" && model.trim().length > 0))]
+    .map((model) => model.trim())
+    .sort((left, right) => left.localeCompare(right));
+}
+
 function normalizeConfig(value: unknown): AIModelConfig | null {
   if (!value || typeof value !== "object") {
     return null;
@@ -52,6 +59,7 @@ function normalizeConfig(value: unknown): AIModelConfig | null {
         ? raw.baseUrl
         : AI_PROVIDER_DEFAULT_BASE_URLS[raw.provider],
     model: typeof raw.model === "string" ? raw.model : "",
+    availableModels: normalizeAvailableModels(raw.availableModels),
     reasoning: isReasoningLevel(raw.reasoning) ? raw.reasoning : "medium",
   };
 }
@@ -85,6 +93,7 @@ export function createAIModelConfig(
     baseUrl:
       partial?.baseUrl?.trim() || AI_PROVIDER_DEFAULT_BASE_URLS[provider],
     model: partial?.model ?? "",
+    availableModels: normalizeAvailableModels(partial?.availableModels),
     reasoning: partial?.reasoning ?? "medium",
   };
 }

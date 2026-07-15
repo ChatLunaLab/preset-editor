@@ -8,6 +8,7 @@ export interface AIModelConfig {
   apiKey: string;
   baseUrl: string;
   model: string;
+  availableModels: string[];
   reasoning: AIReasoningLevel;
 }
 

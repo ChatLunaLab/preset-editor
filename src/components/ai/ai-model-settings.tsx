@@ -62,28 +62,17 @@ export function AIModelSettings() {
   } = useAIModelConfigs();
   const [showApiKey, setShowApiKey] = useState(false);
   const [loadingConfigId, setLoadingConfigId] = useState<string | null>(null);
-  const [modelOptions, setModelOptions] = useState<Record<string, string[]>>(
-    {},
-  );
   const [modelPickerConfigId, setModelPickerConfigId] = useState<string | null>(
     null,
   );
 
   const selected = activeConfig ?? configs[0] ?? null;
-  const models = selected ? (modelOptions[selected.id] ?? []) : [];
+  const models = selected?.availableModels ?? [];
 
   const clearModelOptions = (configId: string) => {
     if (modelPickerConfigId === configId) {
       setModelPickerConfigId(null);
     }
-    setModelOptions((current) => {
-      if (!current[configId]) {
-        return current;
-      }
-      const next = { ...current };
-      delete next[configId];
-      return next;
-    });
   };
 
   const handleFetchModels = async () => {
@@ -94,10 +83,7 @@ export function AIModelSettings() {
     setLoadingConfigId(selected.id);
     try {
       const nextModels = await fetchAIModelIds(selected);
-      setModelOptions((current) => ({
-        ...current,
-        [selected.id]: nextModels,
-      }));
+      updateConfig(selected.id, { availableModels: nextModels });
       if (nextModels.length === 0) {
         toast.warning("接口未返回可用模型");
       } else {
@@ -187,6 +173,7 @@ export function AIModelSettings() {
                   updateConfig(selected.id, {
                     provider: value as AIProviderFormat,
                     model: "",
+                    availableModels: [],
                   });
                 }}
               >
@@ -212,7 +199,10 @@ export function AIModelSettings() {
                   value={selected.apiKey}
                   onChange={(event) => {
                     clearModelOptions(selected.id);
-                    updateConfig(selected.id, { apiKey: event.target.value });
+                    updateConfig(selected.id, {
+                      apiKey: event.target.value,
+                      availableModels: [],
+                    });
                   }}
                   placeholder="请输入 API Key"
                   autoComplete="new-password"
@@ -259,8 +249,11 @@ export function AIModelSettings() {
                 id="ai-config-base"
                 value={selected.baseUrl}
                 onChange={(event) => {
-                  clearModelOptions(selected.id);
-                  updateConfig(selected.id, { baseUrl: event.target.value });
+                    clearModelOptions(selected.id);
+                    updateConfig(selected.id, {
+                      baseUrl: event.target.value,
+                      availableModels: [],
+                    });
                 }}
                 placeholder="API Base URL"
               />

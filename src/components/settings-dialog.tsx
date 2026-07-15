@@ -230,7 +230,7 @@ export function SettingsDialog({ compact = false }: { compact?: boolean }) {
                 "w-[calc(100%-2rem)] max-w-none rounded-2xl sm:max-w-[800px]",
                 isMobile
                     ? "max-h-[calc(100vh-2rem)] overflow-y-auto"
-                    : "overflow-hidden"
+                    : "max-h-[calc(100vh-2rem)] overflow-hidden"
             )}>
                 <DialogHeader>
                     <DialogTitle>设置</DialogTitle>
@@ -258,7 +258,7 @@ export function SettingsDialog({ compact = false }: { compact?: boolean }) {
                         </div>
                     </div>
                 ) : (
-                    <div className="flex min-h-[400px]">
+                    <div className="flex h-[min(60vh,32rem)] min-h-0">
                         <div className="w-[200px] border-r flex flex-col pr-6">
                             {settingsCategories.map((category) => (
                                 <Button
@@ -275,7 +275,7 @@ export function SettingsDialog({ compact = false }: { compact?: boolean }) {
                                 </Button>
                             ))}
                         </div>
-                        <div className="flex-1 min-h-0 overflow-hidden p-4">
+                        <div className="flex-1 min-h-0 overflow-y-auto p-4">
                             {categoryContent}
                         </div>
                     </div>

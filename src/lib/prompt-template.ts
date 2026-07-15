@@ -376,6 +376,12 @@ export function analyzeTemplate(
 
     const expression = parseTemplateExpression(content);
     if (!expression.valid) {
+      ranges.push({
+        from: position,
+        to: tag.to,
+        kind: "error",
+        message: "模板表达式无效；如果这是普通文本，请转义花括号",
+      });
       position = tag.to;
       continue;
     }

@@ -28,7 +28,7 @@ const CHARACTER_EDIT_TABS: readonly CharacterEditTab[] = [
   "input",
 ];
 
-const AI_TABS: readonly AIEditTab[] = ["edit", "agent", "preview"];
+const AI_TABS: readonly AIEditTab[] = ["agent", "edit", "preview"];
 const LAST_EDITOR_PATH_KEY_PREFIX = "preset-editor:last-path:";
 
 function getLastEditorPathKey(presetId: string): string {
@@ -45,7 +45,7 @@ export function getDefaultTab(
   presetType?: PresetType,
 ): EditorTab {
   void presetType;
-  if (mode === "ai") return "edit";
+  if (mode === "ai") return "agent";
   return "basic";
 }
 

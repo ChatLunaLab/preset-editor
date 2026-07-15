@@ -275,16 +275,15 @@ export async function withPresetTransaction(
         ? (result as PresetModel).preset
         : (result as PresetModel["preset"]);
 
-    const sanitized = stripSensitivePresetKeys(nextPresetData);
     const name =
       latest.type === "main"
-        ? (sanitized as RawPreset).keywords?.[0] || latest.name
-        : (sanitized as CharacterPresetTemplate).name || latest.name;
+        ? (nextPresetData as RawPreset).keywords?.[0] || latest.name
+        : (nextPresetData as CharacterPresetTemplate).name || latest.name;
     const lastModified = Date.now();
     const nextModel: PresetModel = {
       ...latest,
       name,
-      preset: sanitized,
+      preset: nextPresetData,
       lastModified,
     };
 

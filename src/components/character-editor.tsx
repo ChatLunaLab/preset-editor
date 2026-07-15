@@ -65,8 +65,8 @@ const CHARACTER_PRESET_TABS = [
 ] as const;
 
 const AI_TABS = [
-    { value: "edit", label: "角色设定" },
     { value: "agent", label: "Agent" },
+    { value: "edit", label: "角色设定" },
     { value: "preview", label: "预览" },
 ] as const;
 
@@ -177,7 +177,7 @@ function CharacterEditorInner({ presetId }: CharacterEditorProps) {
     };
 
     const handleModeChange = (mode: EditorMode) => {
-        const tab: EditorTab = mode === "ai" ? "edit" : "basic";
+        const tab: EditorTab = mode === "ai" ? "agent" : "basic";
         navigateEditor(mode, tab);
     };
 
