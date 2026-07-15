@@ -563,6 +563,7 @@ async function createAgentChatSession(
         .catch(handleAgentChatPersistenceError);
     },
     onError: () => {
+      const injected = interjections.completeInjected();
       const current = chatRef.current;
       if (current) {
         const latestAssistant = [...current.messages]
@@ -572,7 +573,7 @@ async function createAgentChatSession(
           ? mergeInjectedMessages(
               current.messages,
               latestAssistant.id,
-              interjections.completeInjected(),
+              injected,
             )
           : current.messages;
         current.messages = finalizedMessages;

@@ -65,7 +65,8 @@ export function PresetToolDetails({
           ([key]) =>
             key !== "error" &&
             key !== "warnings" &&
-            key !== "generateArtifact",
+            key !== "generateArtifact" &&
+            key !== "ok",
         ),
       )
     : output;

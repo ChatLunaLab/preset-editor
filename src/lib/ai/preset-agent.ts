@@ -7,6 +7,7 @@ import {
   type ToolSet,
 } from "ai";
 import { load } from "js-yaml";
+import safeRegex from "safe-regex2";
 import { z } from "zod";
 import { analyzeTemplate } from "@/lib/prompt-template";
 import {
@@ -38,6 +39,7 @@ import { buildPresetFileName, serializePresetData } from "./generated-yaml";
 
 const MAX_TEXT = 4000;
 const MAX_SEARCH_RESULTS = 50;
+const FORMAT_REFERENCE_TIMEOUT_MS = 5000;
 
 const chatPresetFormatSchema = z.enum([
   "latest",
@@ -543,7 +545,9 @@ async function characterFormatReference(
   const source = CHARACTER_FORMAT_URLS[format];
 
   try {
-    const response = await fetch(source);
+    const response = await fetch(source, {
+      signal: AbortSignal.timeout(FORMAT_REFERENCE_TIMEOUT_MS),
+    });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
@@ -1036,6 +1040,9 @@ export function createPresetTools(
             `无效正则表达式：${error instanceof Error ? error.message : String(error)}`,
             { cause: error },
           );
+        }
+        if (!safeRegex(pattern)) {
+          throw new Error("正则表达式可能导致性能问题，请简化后重试");
         }
       }
       const literalQuery = case_sensitive ? query : query.toLocaleLowerCase();
