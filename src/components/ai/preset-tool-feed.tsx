@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -14,7 +15,6 @@ import { Shimmer } from "@/components/ai-elements/shimmer";
 import { PresetToolActivity } from "./preset-tool-activity";
 import {
   isToolPending,
-  presentTool,
   summarizeToolGroup,
   type PresetToolPart,
 } from "./preset-tool-presentation";
@@ -26,36 +26,26 @@ export function PresetToolFeed({
 }) {
   if (parts.length === 1) {
     const part = parts[0];
-    const presentation = presentTool(part);
-    return (
-      <PresetToolActivity
-        key={`${part.toolCallId}-${presentation.failed}`}
-        part={part}
-      />
-    );
+    return <PresetToolActivity key={part.toolCallId} part={part} />;
   }
 
-  const hasFailure = parts.some((part) => presentTool(part).failed);
-  return (
-    <GroupedPresetToolFeed
-      key={`tool-group-${hasFailure}`}
-      parts={parts}
-      hasFailure={hasFailure}
-    />
-  );
+  return <GroupedPresetToolFeed parts={parts} />;
 }
 
 function GroupedPresetToolFeed({
   parts,
-  hasFailure,
 }: {
   parts: PresetToolPart[];
-  hasFailure: boolean;
 }) {
   const pending = parts.some(isToolPending);
+  const [open, setOpen] = useState(false);
 
   return (
-    <Collapsible className="group/tool-feed max-w-full" defaultOpen={hasFailure}>
+    <Collapsible
+      className="group/tool-feed w-full max-w-full"
+      open={open}
+      onOpenChange={setOpen}
+    >
       <CollapsibleTrigger className="inline-flex h-7 max-w-full items-center gap-1.5 text-left text-sm text-muted-foreground transition-colors hover:text-foreground">
         <ListTreeIcon
           className={cn(
@@ -73,21 +63,13 @@ function GroupedPresetToolFeed({
             {summarizeToolGroup(parts)}
           </span>
         )}
-        {!pending && (
-          <ChevronDownIcon className="size-3 shrink-0 text-muted-foreground/70 transition-transform duration-200 group-data-[state=open]/tool-feed:rotate-180" />
-        )}
+        <ChevronDownIcon className="size-3 shrink-0 text-muted-foreground/70 transition-transform duration-200 group-data-[state=open]/tool-feed:rotate-180" />
       </CollapsibleTrigger>
       <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-[collapsible-up_160ms_ease-in] data-[state=open]:animate-[collapsible-down_200ms_ease-out]">
-        <div className="mt-0.5 flex flex-col items-start gap-1">
-          {parts.map((part) => {
-            const presentation = presentTool(part);
-            return (
-              <PresetToolActivity
-                key={`${part.toolCallId}-${presentation.failed}`}
-                part={part}
-              />
-            );
-          })}
+        <div className="mt-0.5 flex w-full flex-col items-start gap-1">
+          {parts.map((part) => (
+            <PresetToolActivity key={part.toolCallId} part={part} />
+          ))}
         </div>
       </CollapsibleContent>
     </Collapsible>

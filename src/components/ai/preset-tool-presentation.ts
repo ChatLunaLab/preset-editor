@@ -3,7 +3,13 @@ import { getToolName, type DynamicToolUIPart, type ToolUIPart } from "ai";
 export type PresetToolPart = ToolUIPart | DynamicToolUIPart;
 
 export type PresetToolKind =
-  "inspect" | "update" | "validate" | "generate" | "search" | "generic";
+  | "inspect"
+  | "preset-search"
+  | "update"
+  | "validate"
+  | "generate"
+  | "search"
+  | "generic";
 
 export interface PresetToolPresentation {
   name: string;
@@ -31,6 +37,18 @@ const TOOL_META: Record<
   inspectPreset: {
     kind: "inspect",
     label: "读取当前预设",
+  },
+  readPreset: {
+    kind: "inspect",
+    label: "读取预设",
+  },
+  searchPreset: {
+    kind: "preset-search",
+    label: "搜索预设",
+  },
+  editPreset: {
+    kind: "update",
+    label: "精确编辑预设",
   },
   updateMainPreset: {
     kind: "update",
@@ -118,6 +136,51 @@ function buildActivityAndDetails(
   const hasArtifactContent =
     typeof generateArtifact?.content === "string" &&
     generateArtifact.content.length > 0;
+  if (name === "readPreset") {
+    const readsFormat = input?.source === "format";
+    const target = readsFormat ? "预设格式" : "当前预设";
+    if (pending) {
+      return { activity: `正在读取${target}`, hasDetails: false };
+    }
+    if (failed) {
+      return { activity: `读取${target}失败`, hasDetails: true };
+    }
+    return { activity: `读取了${target}`, hasDetails: true };
+  }
+
+  if (name === "searchPreset") {
+    const query = typeof input?.query === "string" ? input.query : undefined;
+    if (pending) {
+      return {
+        activity: query ? `正在搜索预设：${query}` : "正在搜索预设",
+        hasDetails: false,
+      };
+    }
+    if (failed) {
+      return { activity: "搜索预设失败", hasDetails: true };
+    }
+    return {
+      activity: "搜索了预设",
+      hasDetails: true,
+    };
+  }
+
+  if (name === "editPreset") {
+    if (pending) {
+      return { activity: "正在精确编辑预设", hasDetails: false };
+    }
+    if (failed) {
+      return { activity: "精确编辑预设失败", hasDetails: true };
+    }
+    const changedSummary = formatChangedFields(changedFields);
+    return {
+      activity: changedSummary
+        ? `编辑了 ${changedSummary}`
+        : "检查了预设 · 无字段变化",
+      hasDetails: true,
+    };
+  }
+
   if (name === "inspectPreset") {
     const section =
       typeof input?.section === "string" ? input.section : "summary";
@@ -314,7 +377,7 @@ export function presentTool(part: PresetToolPart): PresetToolPresentation {
     part.state === "output-denied" ||
     output?.ok === false;
 
-  const { activity, hasDetails } = buildActivityAndDetails(
+  const { activity } = buildActivityAndDetails(
     name,
     part,
     pending,
@@ -328,7 +391,7 @@ export function presentTool(part: PresetToolPart): PresetToolPresentation {
     activity,
     pending,
     failed,
-    hasDetails,
+    hasDetails: true,
   };
 }
 
@@ -361,6 +424,13 @@ export function summarizeToolGroup(parts: PresetToolPart[]) {
       ),
     );
     actions.push(`读取了${inspectedSections.join("、")}`);
+  }
+  if (counts["preset-search"]) {
+    actions.push(
+      counts["preset-search"] > 1
+        ? `搜索了 ${counts["preset-search"]} 次预设`
+        : "搜索了预设",
+    );
   }
   if (counts.update)
     actions.push(

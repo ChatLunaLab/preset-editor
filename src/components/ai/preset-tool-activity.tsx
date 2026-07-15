@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -42,6 +43,7 @@ function ActivityIcon({
   );
 
   if (kind === "inspect") return <FileSearchIcon className={className} />;
+  if (kind === "preset-search") return <FileSearchIcon className={className} />;
   if (kind === "update") return <PencilLineIcon className={className} />;
   if (kind === "validate") return <ShieldCheckIcon className={className} />;
   if (kind === "generate") return <SparklesIcon className={className} />;
@@ -56,30 +58,13 @@ export function PresetToolActivity({
 }) {
   const presentation = presentTool(part);
   const activity = presentation.activity;
-
-  if (!presentation.hasDetails) {
-    return (
-      <div className="inline-flex h-7 max-w-full items-center gap-1.5 text-sm text-muted-foreground">
-        <ActivityIcon
-          kind={presentation.kind}
-          failed={presentation.failed}
-          pending={presentation.pending}
-        />
-        {presentation.pending ? (
-          <Shimmer as="span" className="min-w-0 truncate" duration={1.4}>
-            {activity}
-          </Shimmer>
-        ) : (
-          <span className="min-w-0 truncate">{activity}</span>
-        )}
-      </div>
-    );
-  }
+  const [open, setOpen] = useState(false);
 
   return (
     <Collapsible
-      className="group/activity max-w-full"
-      defaultOpen={presentation.failed}
+      className="group/activity w-full max-w-full"
+      open={open}
+      onOpenChange={setOpen}
     >
       <CollapsibleTrigger className="inline-flex h-7 max-w-full items-center gap-1.5 text-left text-sm text-muted-foreground transition-colors hover:text-foreground">
         <ActivityIcon
@@ -94,9 +79,7 @@ export function PresetToolActivity({
         ) : (
           <span className="min-w-0 truncate">{activity}</span>
         )}
-        {!presentation.pending && (
-          <ChevronDownIcon className="size-3 shrink-0 text-muted-foreground/70 transition-transform duration-200 group-data-[state=open]/activity:rotate-180" />
-        )}
+        <ChevronDownIcon className="size-3 shrink-0 text-muted-foreground/70 transition-transform duration-200 group-data-[state=open]/activity:rotate-180" />
       </CollapsibleTrigger>
       <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-[collapsible-up_160ms_ease-in] data-[state=open]:animate-[collapsible-down_200ms_ease-out]">
         <PresetToolDetails part={part} presentation={presentation} />

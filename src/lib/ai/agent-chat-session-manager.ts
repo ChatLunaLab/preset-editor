@@ -14,6 +14,10 @@ import { createChatPresetAgent } from "./preset-agent";
 
 const INCREMENTAL_SAVE_DEBOUNCE_MS = 400;
 
+export function handleAgentChatPersistenceError(error: unknown) {
+  console.error("[agent-chat] persistence failed", error);
+}
+
 export type AgentChatPresetType = "main" | "character";
 
 export interface AgentChatRuntime {
@@ -21,6 +25,14 @@ export interface AgentChatRuntime {
   name: string;
   reasoning: AIReasoningLevel | undefined;
   webSearch: boolean;
+}
+
+export interface AgentChatInterjection {
+  id: string;
+  text: string;
+  createdAt: number;
+  state: "queued" | "injected";
+  stepNumber?: number;
 }
 
 export interface AgentChatSession {
@@ -31,6 +43,11 @@ export interface AgentChatSession {
   flushSave: (messages: UIMessage[]) => Promise<void>;
   clear: () => Promise<void>;
   isBusy: () => boolean;
+  enqueueInterjection: (text: string, createdAt: number) => void;
+  getInterjections: () => AgentChatInterjection[];
+  subscribeInterjections: (
+    listener: (entries: AgentChatInterjection[]) => void,
+  ) => () => void;
 }
 
 const sessions = new Map<string, AgentChatSession>();
@@ -45,6 +62,68 @@ export function getAgentChatSessionId(
 
 function cloneMessages(messages: UIMessage[]): UIMessage[] {
   return structuredClone(messages);
+}
+
+class AgentInterjectionQueue {
+  private entries: AgentChatInterjection[] = [];
+  private listeners = new Set<(entries: AgentChatInterjection[]) => void>();
+
+  enqueue(text: string, createdAt: number) {
+    this.entries = [
+      ...this.entries,
+      {
+        id: crypto.randomUUID(),
+        text,
+        createdAt,
+        state: "queued",
+      },
+    ];
+    this.publish();
+  }
+
+  takeForStep(stepNumber: number) {
+    const queued = this.entries.filter((entry) => entry.state === "queued");
+    if (queued.length === 0) return [];
+    const queuedIds = new Set(queued.map((entry) => entry.id));
+    this.entries = this.entries.map((entry) =>
+      queuedIds.has(entry.id)
+        ? { ...entry, state: "injected" as const, stepNumber }
+        : entry,
+    );
+    this.publish();
+    return queued;
+  }
+
+  completeInjected() {
+    const injected = this.entries.filter(
+      (entry) => entry.state === "injected" && entry.stepNumber !== undefined,
+    );
+    if (injected.length === 0) return [];
+    const injectedIds = new Set(injected.map((entry) => entry.id));
+    this.entries = this.entries.filter((entry) => !injectedIds.has(entry.id));
+    this.publish();
+    return injected;
+  }
+
+  clear() {
+    if (this.entries.length === 0) return;
+    this.entries = [];
+    this.publish();
+  }
+
+  get() {
+    return this.entries.map((entry) => ({ ...entry }));
+  }
+
+  subscribe(listener: (entries: AgentChatInterjection[]) => void) {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  private publish() {
+    const snapshot = this.get();
+    for (const listener of this.listeners) listener(snapshot);
+  }
 }
 
 function withReasoningTiming<T extends { providerMetadata?: ProviderMetadata }>(
@@ -118,10 +197,12 @@ class PresetAgentChatTransport implements ChatTransport<UIMessage> {
     presetId: string;
     presetType: AgentChatPresetType;
   } & AgentChatRuntime;
+  private readonly interjections: AgentInterjectionQueue;
 
   constructor(options: {
     presetId: string;
     presetType: AgentChatPresetType;
+    interjections: AgentInterjectionQueue;
   } & AgentChatRuntime) {
     this.runtime = {
       presetId: options.presetId,
@@ -131,6 +212,7 @@ class PresetAgentChatTransport implements ChatTransport<UIMessage> {
       reasoning: options.reasoning,
       webSearch: options.webSearch,
     };
+    this.interjections = options.interjections;
   }
 
   updateRuntime(runtime: Partial<AgentChatRuntime>) {
@@ -167,6 +249,10 @@ class PresetAgentChatTransport implements ChatTransport<UIMessage> {
       name,
       reasoning,
       webSearch,
+      takeInterjections: (stepNumber) =>
+        this.interjections
+          .takeForStep(stepNumber)
+          .map(({ text }) => ({ text })),
     });
     const smoothAgent = {
       version: "agent-v1" as const,
@@ -239,7 +325,9 @@ class SessionPersistence {
       const revision = this.pendingRevision;
       this.pendingMessages = null;
       if (snapshot) {
-        void this.enqueuePersist(snapshot, revision);
+        void this.enqueuePersist(snapshot, revision).catch(
+          handleAgentChatPersistenceError,
+        );
       }
     }, INCREMENTAL_SAVE_DEBOUNCE_MS);
   }
@@ -294,6 +382,99 @@ class SessionPersistence {
   }
 }
 
+function splitAssistantWithInterjections(
+  message: UIMessage,
+  interjections: AgentChatInterjection[],
+): UIMessage[] {
+  if (message.role !== "assistant" || interjections.length === 0) {
+    return [message];
+  }
+  const stepStartIndices = message.parts.reduce<number[]>((indices, part, index) => {
+    if (part.type === "step-start") indices.push(index);
+    return indices;
+  }, []);
+  const groups = new Map<number, AgentChatInterjection[]>();
+  for (const entry of interjections) {
+    if (entry.stepNumber === undefined) continue;
+    const group = groups.get(entry.stepNumber) ?? [];
+    group.push(entry);
+    groups.set(entry.stepNumber, group);
+  }
+
+  const output: UIMessage[] = [];
+  const unmatched: AgentChatInterjection[] = [];
+  let cursor = 0;
+  let segmentIndex = 0;
+  const metadata =
+    message.metadata && typeof message.metadata === "object"
+      ? (message.metadata as Record<string, unknown>)
+      : {};
+  const intermediateMetadata =
+    typeof metadata.createdAt === "number"
+      ? { createdAt: metadata.createdAt }
+      : undefined;
+
+  for (const [stepNumber, entries] of Array.from(groups.entries()).sort(
+    ([left], [right]) => left - right,
+  )) {
+    const boundary = stepStartIndices[stepNumber];
+    if (boundary === undefined || boundary < cursor) {
+      unmatched.push(...entries);
+      continue;
+    }
+    const parts = message.parts.slice(cursor, boundary);
+    if (parts.length > 0) {
+      output.push({
+        ...message,
+        id: `${message.id}-before-${segmentIndex}`,
+        parts,
+        metadata: intermediateMetadata,
+      });
+      segmentIndex += 1;
+    }
+    output.push(
+      ...entries.map(
+        (entry): UIMessage => ({
+          id: entry.id,
+          role: "user",
+          metadata: { createdAt: entry.createdAt, interjected: true },
+          parts: [{ type: "text", text: entry.text }],
+        }),
+      ),
+    );
+    cursor = boundary;
+  }
+
+  const finalParts = message.parts.slice(cursor);
+  if (finalParts.length > 0 || output.length === 0) {
+    output.push({ ...message, parts: finalParts });
+  }
+  output.push(
+    ...unmatched.map(
+      (entry): UIMessage => ({
+        id: entry.id,
+        role: "user",
+        metadata: { createdAt: entry.createdAt, interjected: true },
+        parts: [{ type: "text", text: entry.text }],
+      }),
+    ),
+  );
+  return output;
+}
+
+function mergeInjectedMessages(
+  messages: UIMessage[],
+  assistantMessageId: string,
+  interjections: AgentChatInterjection[],
+) {
+  if (interjections.length === 0) return messages;
+  return messages.flatMap((message) =>
+    message.id === assistantMessageId
+      ? splitAssistantWithInterjections(message, interjections)
+      : [message],
+  );
+}
+
 async function createAgentChatSession(
   sessionId: string,
   presetType: AgentChatPresetType,
@@ -302,6 +483,7 @@ async function createAgentChatSession(
 ): Promise<AgentChatSession> {
   const record = await db.agentChats.get(sessionId);
   const initialMessages = record?.messages ?? [];
+  const interjections = new AgentInterjectionQueue();
   const transport = new PresetAgentChatTransport({
     presetId,
     presetType,
@@ -309,6 +491,7 @@ async function createAgentChatSession(
     name: runtime.name,
     reasoning: runtime.reasoning,
     webSearch: runtime.webSearch,
+    interjections,
   });
   const persistence = new SessionPersistence(sessionId);
 
@@ -366,16 +549,36 @@ async function createAgentChatSession(
               index === messageIndex ? completedMessage : item,
             )
           : [...messages, completedMessage];
+      const finalizedMessages = mergeInjectedMessages(
+        completedMessages,
+        completedMessage.id,
+        interjections.completeInjected(),
+      );
 
       if (chatRef.current) {
-        chatRef.current.messages = completedMessages;
+        chatRef.current.messages = finalizedMessages;
       }
-      void persistence.flush(completedMessages);
+      void persistence
+        .flush(finalizedMessages)
+        .catch(handleAgentChatPersistenceError);
     },
     onError: () => {
       const current = chatRef.current;
       if (current) {
-        void persistence.flush(current.messages);
+        const latestAssistant = [...current.messages]
+          .reverse()
+          .find((message) => message.role === "assistant");
+        const finalizedMessages = latestAssistant
+          ? mergeInjectedMessages(
+              current.messages,
+              latestAssistant.id,
+              interjections.completeInjected(),
+            )
+          : current.messages;
+        current.messages = finalizedMessages;
+        void persistence
+          .flush(finalizedMessages)
+          .catch(handleAgentChatPersistenceError);
       }
     },
   });
@@ -393,6 +596,7 @@ async function createAgentChatSession(
     flushSave: (messages) => persistence.flush(messages),
     clear: async () => {
       if (session.isBusy()) return;
+      interjections.clear();
       await persistence.clear();
       chat.messages = [];
     },
@@ -400,6 +604,11 @@ async function createAgentChatSession(
       const status = chat.status;
       return status === "submitted" || status === "streaming";
     },
+    enqueueInterjection: (text, createdAt) => {
+      interjections.enqueue(text, createdAt);
+    },
+    getInterjections: () => interjections.get(),
+    subscribeInterjections: (listener) => interjections.subscribe(listener),
   };
 
   sessions.set(sessionId, session);

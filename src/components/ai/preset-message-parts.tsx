@@ -274,19 +274,17 @@ export function PresetMessageParts({
         indexedSegments.map(renderSegment)
       ) : (
         <>
-          {wasStopped ? (
-            <div className="flex h-7 w-full items-center border-b border-border/60 pb-1 text-sm text-muted-foreground">
-              {durationSeconds
-                ? `已在 ${formatDuration(durationSeconds)}后停止`
-                : "已停止"}
-            </div>
-          ) : workSegments.length > 0 ? (
+          {workSegments.length > 0 ? (
             <Collapsible className="group/work w-full border-b border-border/60 pb-1">
               <CollapsibleTrigger className="inline-flex h-7 items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground">
                 <span>
-                  {durationSeconds
-                    ? `工作了 ${formatDuration(durationSeconds)}`
-                    : "工作完成"}
+                  {wasStopped
+                    ? durationSeconds
+                      ? `已在 ${formatDuration(durationSeconds)}后停止`
+                      : "已停止"
+                    : durationSeconds
+                      ? `工作了 ${formatDuration(durationSeconds)}`
+                      : "工作完成"}
                 </span>
                 <ChevronRightIcon className="size-3.5 transition-transform duration-200 group-data-[state=open]/work:rotate-90" />
               </CollapsibleTrigger>
@@ -296,6 +294,12 @@ export function PresetMessageParts({
                 </div>
               </CollapsibleContent>
             </Collapsible>
+          ) : wasStopped ? (
+            <div className="flex h-7 w-full items-center border-b border-border/60 pb-1 text-sm text-muted-foreground">
+              {durationSeconds
+                ? `已在 ${formatDuration(durationSeconds)}后停止`
+                : "已停止"}
+            </div>
           ) : null}
           {textSegments.map(renderSegment)}
         </>
