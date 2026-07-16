@@ -15,7 +15,6 @@ import { load } from "js-yaml";
 
 const PRESET_UPLOAD_API_URL =
   "https://api-chatluna-preset-market.dingyi222666.top/upload_preset";
-const DEFAULT_UPLOAD_TOKEN_ENCODED = "Y2hhdGx1bmE=";
 
 export const exportPreset = (preset: PresetModel) => {
   const blob = new Blob([makeYaml(preset)], {
@@ -82,10 +81,6 @@ export interface UploadPresetResult {
 
 export function getPresetDefaultFileName(name: string) {
   return buildUploadFileName(name);
-}
-
-export function getPresetUploadToken() {
-  return decodeBase64(DEFAULT_UPLOAD_TOKEN_ENCODED);
 }
 
 export async function uploadPreset(
@@ -223,12 +218,4 @@ function base64UrlEncode(data: Uint8Array) {
     bin += String.fromCharCode(data[i]);
   }
   return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-}
-
-function decodeBase64(value: string) {
-  try {
-    return atob(value);
-  } catch {
-    return "";
-  }
 }

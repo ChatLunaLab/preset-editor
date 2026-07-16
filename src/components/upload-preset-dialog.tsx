@@ -9,7 +9,6 @@ import type { PresetModel } from "@/lib/database";
 import { getPresetDisplayName } from "@/lib/preset-store";
 import {
     getPresetDefaultFileName,
-    getPresetUploadToken,
     uploadPreset,
 } from "@/lib/preset-io";
 import { useMemo, useState } from "react";
@@ -32,6 +31,7 @@ export function UploadPresetDialog({
     );
 
     const [fileNameOverride, setFileNameOverride] = useState<string | null>(null);
+    const [uploadToken, setUploadToken] = useState("");
     const [isUploading, setIsUploading] = useState(false);
     const [successUrl, setSuccessUrl] = useState("");
     const [successOpen, setSuccessOpen] = useState(false);
@@ -41,6 +41,7 @@ export function UploadPresetDialog({
     const handleOpenChange = (nextOpen: boolean) => {
         if (!nextOpen) {
             setFileNameOverride(null);
+            setUploadToken("");
         }
         onOpenChange(nextOpen);
     };
@@ -49,7 +50,7 @@ export function UploadPresetDialog({
         setIsUploading(true);
         try {
             const result = await uploadPreset(preset, {
-                token: getPresetUploadToken(),
+                token: uploadToken,
                 fileName,
             });
 
@@ -109,6 +110,20 @@ export function UploadPresetDialog({
                                 仅支持字母、数字、下划线、点、短横线和 yml/yaml 后缀。
                             </p>
                         </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="preset-upload-token">上传密钥</Label>
+                            <Input
+                                id="preset-upload-token"
+                                type="password"
+                                autoComplete="off"
+                                value={uploadToken}
+                                onChange={(event) => setUploadToken(event.target.value)}
+                                placeholder="请输入上传密钥"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                密钥仅用于本次请求，不会保存在浏览器中。
+                            </p>
+                        </div>
                     </div>
 
                     <DialogFooter>
@@ -120,7 +135,11 @@ export function UploadPresetDialog({
                         >
                             取消
                         </Button>
-                        <Button type="button" onClick={handleUpload} disabled={isUploading}>
+                        <Button
+                            type="button"
+                            onClick={handleUpload}
+                            disabled={isUploading || !uploadToken.trim()}
+                        >
                             {isUploading ? "分享中..." : "分享预设"}
                         </Button>
                     </DialogFooter>

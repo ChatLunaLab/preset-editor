@@ -39,66 +39,90 @@ export function PresetPreviewDialog({ preset, open, onOpenChange }: PresetPrevie
 
   // 初始化编辑器
   useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    let cancelled = false;
+    let editorInstance: editor.IStandaloneCodeEditor | null = null;
+    let editorModel: editor.ITextModel | null = null;
+    let resizeObserver: ResizeObserver | null = null;
+
     const initialize = async () => {
       try {
         const monaco = await loader.init();
+        const container = editorContainerRef.current;
+        if (cancelled || !container) return;
 
         // 创建编辑器实例
-        editorInstanceRef.current = monaco.editor.create(
-          editorContainerRef.current!,
-          {
-            value: presetYaml,
-            language: "yaml",
-            readOnly: true,
-            theme: theme.resolvedTheme === "dark" ? "vs-dark" : "vs-light",
-            automaticLayout: true
-          }
-        );
+        editorInstance = monaco.editor.create(container, {
+          value: presetYaml,
+          language: "yaml",
+          readOnly: true,
+          theme: theme.resolvedTheme === "dark" ? "vs-dark" : "vs-light",
+          automaticLayout: true,
+        });
+        editorModel = editorInstance.getModel();
+        editorInstanceRef.current = editorInstance;
 
         // 响应式布局
-        resizeObserverRef.current = new ResizeObserver(() => {
+        resizeObserver = new ResizeObserver(() => {
           const dialogContentRect = dialogContentRef.current?.getBoundingClientRect();
 
           if (isMobile) {
-            editorInstanceRef.current?.layout({
+            editorInstance?.layout({
               width: (dialogContentRect?.width || 0) * 0.9,
               height: (dialogContentRect?.height || 0) * 0.8,
-            })
+            });
           } else {
-            editorInstanceRef.current?.layout()
+            editorInstance?.layout();
           }
         });
+        resizeObserverRef.current = resizeObserver;
 
-        if (editorContainerRef.current.parentElement) {
-          resizeObserverRef.current.observe(editorContainerRef.current.parentElement);
+        if (container.parentElement) {
+          resizeObserver.observe(container.parentElement);
         }
 
         if (dialogContentRef.current) {
-          resizeObserverRef.current.observe(dialogContentRef.current);
+          resizeObserver.observe(dialogContentRef.current);
 
           if (isMobile) {
             const dialogContentRect = dialogContentRef.current?.getBoundingClientRect();
 
-            editorInstanceRef.current?.layout({
+            editorInstance.layout({
               width: (dialogContentRect?.width || 0) * 0.9,
               height: (dialogContentRect?.height || 0) * 0.8,
-            })
+            });
           } else {
-            editorInstanceRef.current?.layout() 
+            editorInstance.layout();
           }
         }
 
-        setIsLoading(false);
-
+        if (!cancelled) setIsLoading(false);
       } catch (error) {
+        if (cancelled) return;
         console.error("Monaco initialization failed:", error);
         setIsLoading(false);
       }
     };
 
-    initialize();
+    void initialize();
 
-  }, [open, editorContainerRef, isMobile, presetYaml, theme.resolvedTheme]);
+    return () => {
+      cancelled = true;
+      resizeObserver?.disconnect();
+      editorInstance?.dispose();
+      editorModel?.dispose();
+
+      if (resizeObserverRef.current === resizeObserver) {
+        resizeObserverRef.current = null;
+      }
+      if (editorInstanceRef.current === editorInstance) {
+        editorInstanceRef.current = null;
+      }
+    };
+  }, [open, isMobile, presetYaml, theme.resolvedTheme]);
 
   // 更新编辑器内容
   useEffect(() => {
@@ -108,20 +132,7 @@ export function PresetPreviewDialog({ preset, open, onOpenChange }: PresetPrevie
     if (currentValue !== presetYaml) {
       editorInstanceRef.current.setValue(presetYaml);
     }
-  }, [presetYaml, editorInstanceRef]);
-
-  // 清理编辑器
-  useEffect(() => {
-    return () => {
-      if (editorInstanceRef.current) {
-        editorInstanceRef.current.dispose();
-      }
-
-      if (resizeObserverRef.current) {
-        resizeObserverRef.current.disconnect();
-      }
-    };
-  }, []);
+  }, [presetYaml]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

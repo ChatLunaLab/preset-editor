@@ -371,6 +371,7 @@ function CharacterAIAgentChat({
   const messagesRef = useRef(messages);
   const inputHeight = Math.max(inputBounds.height, 112);
   const isBusy = status === "submitted" || status === "streaming";
+  const hasInput = input.trim().length > 0;
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -697,22 +698,17 @@ function CharacterAIAgentChat({
                 onModelIdChange={onModelIdChange}
                 onReasoningChange={onReasoningChange}
               />
-              {isBusy && (
-                <PromptInputButton
-                  type="button"
-                  size="icon-sm"
-                  className="rounded-full active:!translate-y-0"
-                  aria-label="停止当前任务"
-                  onClick={stop}
-                >
-                  <SquareIcon className="size-4" />
-                </PromptInputButton>
-              )}
               <PromptInputSubmit
                 className="rounded-full disabled:opacity-100"
-                status={isBusy ? "ready" : status}
-                disabled={!input.trim()}
-              />
+                status={isBusy && hasInput ? "ready" : status}
+                onStop={isBusy && !hasInput ? stop : undefined}
+                disabled={!isBusy && !hasInput}
+                aria-label={isBusy && !hasInput ? "停止当前任务" : "发送消息"}
+              >
+                {isBusy && !hasInput ? (
+                  <SquareIcon className="size-4" />
+                ) : undefined}
+              </PromptInputSubmit>
             </div>
           </PromptInputFooter>
         </PromptInput>
