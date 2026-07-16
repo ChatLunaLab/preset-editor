@@ -1,5 +1,7 @@
 import {
   CharacterPresetTemplate,
+  isCharacterPresetTemplate,
+  isRawPreset,
   RawPreset,
 } from "@/types/preset";
 import { db, type PresetModel } from "@/lib/database";
@@ -86,12 +88,12 @@ export async function createCharacterPreset(name: string) {
     </think>
 
     <message_part>
-     <message name='煕' id='0' type='text' sticker='表情包类型'>回复内容（40字内）</message>
+     <message name='${name}' id='0' type='text' sticker='表情包类型'>回复内容（40字内）</message>
     </message_part>`,
-      system: `你现在正在QQ群聊中和群友聊天，你是一个普通的群友。你的网名是煕，请根据以下信息进行角色扮演：
+      system: `你现在正在QQ群聊中和群友聊天，你是一个普通的群友。你的网名是${name}，请根据以下信息进行角色扮演：
 
     个人信息 {{
-        网名：煕
+        网名：${name}
         群聊id：0
         性别：女
         身份：高中生
@@ -178,7 +180,7 @@ export async function createCharacterPreset(name: string) {
 
 
      回复格式: {{
-         基本格式: "<message name='煕' id='0' type='type' sticker='sticker'>content</message>"
+         基本格式: "<message name='${name}' id='0' type='type' sticker='sticker'>content</message>"
 
          类型: [
            text: 文本消息
@@ -191,11 +193,11 @@ export async function createCharacterPreset(name: string) {
          }}
 
          示例: {{
-             普通回复: "<message name='煕' id='0' type='text' sticker='表情包类型'>回复内容</message>",
-             At回复: "<message name='煕' id='0' type='text' sticker='表情包类型'><at name='用户'>123</at>回复内容</message>",
-             带颜文字: "<message name='煕' id='0' type='text' sticker='表情包类型'><pre>(づ｡◕‿‿◕｡)づ</pre> 回复内容 <pre>(✿◠‿◠)</pre></message>",
-             语音回复: "<message name='煕' id='0' type='voice' sticker='表情包类型'>语音内容</message>",
-             无需回复: "<message name='煕' id='0' type='text' sticker='表情包类型'></message>"
+             普通回复: "<message name='${name}' id='0' type='text' sticker='表情包类型'>回复内容</message>",
+             At回复: "<message name='${name}' id='0' type='text' sticker='表情包类型'><at name='用户'>123</at>回复内容</message>",
+             带颜文字: "<message name='${name}' id='0' type='text' sticker='表情包类型'><pre>(づ｡◕‿‿◕｡)づ</pre> 回复内容 <pre>(✿◠‿◠)</pre></message>",
+             语音回复: "<message name='${name}' id='0' type='voice' sticker='表情包类型'>语音内容</message>",
+             无需回复: "<message name='${name}' id='0' type='text' sticker='表情包类型'></message>"
          }}
 
          注意事项: {{
@@ -238,10 +240,18 @@ export async function withPresetTransaction(
         ? (result as PresetModel).preset
         : (result as PresetModel["preset"]);
 
-    const name =
-      latest.type === "main"
-        ? (nextPresetData as RawPreset).keywords?.[0] || latest.name
-        : (nextPresetData as CharacterPresetTemplate).name || latest.name;
+    let name: string;
+    if (latest.type === "main") {
+      if (!isRawPreset(nextPresetData)) {
+        throw new Error("主插件预设写入了不匹配的数据结构");
+      }
+      name = nextPresetData.keywords?.[0] || latest.name;
+    } else {
+      if (!isCharacterPresetTemplate(nextPresetData)) {
+        throw new Error("伪装预设写入了不匹配的数据结构");
+      }
+      name = nextPresetData.name || latest.name;
+    }
     const lastModified = Date.now();
     const nextModel: PresetModel = {
       ...latest,

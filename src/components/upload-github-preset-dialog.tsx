@@ -10,7 +10,6 @@ import type { PresetModel } from "@/lib/database";
 import { getPresetDisplayName } from "@/lib/preset-store";
 import {
     getPresetDefaultFileName,
-    getPresetUploadToken,
     uploadPreset,
 } from "@/lib/preset-io";
 import { cn } from "@/lib/utils";
@@ -67,6 +66,7 @@ function UploadGithubPresetDialogContent({
     const [isUploading, setIsUploading] = useState(false);
     const [preset, setPreset] = useState<PresetModel | null>(null);
     const [fileNameOverride, setFileNameOverride] = useState<string | null>(null);
+    const [uploadToken, setUploadToken] = useState("");
 
     const presetName = useMemo(() => (preset ? getPresetDisplayName(preset) : ""), [preset]);
     const defaultFileName = useMemo(
@@ -124,13 +124,13 @@ function UploadGithubPresetDialogContent({
     };
 
     const handleUpload = async () => {
-        if (!preset) {
+        if (!preset || !uploadToken.trim()) {
             return;
         }
         setIsUploading(true);
         try {
             const result = await uploadPreset(preset, {
-                token: getPresetUploadToken(),
+                token: uploadToken,
                 fileName,
             });
 
@@ -227,6 +227,20 @@ function UploadGithubPresetDialogContent({
                             仅支持字母、数字、下划线、点、短横线和 yml/yaml 后缀。
                         </p>
                     </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="github-preset-upload-token">上传密钥</Label>
+                        <Input
+                            id="github-preset-upload-token"
+                            type="password"
+                            autoComplete="off"
+                            value={uploadToken}
+                            onChange={(event) => setUploadToken(event.target.value)}
+                            placeholder="请输入上传密钥"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            密钥仅用于本次请求，不会保存在浏览器中。
+                        </p>
+                    </div>
                     <Button
                         type="button"
                         variant="secondary"
@@ -253,7 +267,7 @@ function UploadGithubPresetDialogContent({
                 <Button
                     type="button"
                     onClick={handleUpload}
-                    disabled={!preset || isUploading}
+                    disabled={!preset || isUploading || !uploadToken.trim()}
                 >
                     {isUploading ? "分享中..." : "分享预设"}
                 </Button>
