@@ -17,7 +17,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { createCharacterPreset, createMainPreset } from "@/hooks/use-preset";
+import {
+    createCharacterPreset,
+    createMainPreset,
+} from "@/lib/preset-store";
 
 export function NewPresetDialog() {
     const [name, setName] = useState("");

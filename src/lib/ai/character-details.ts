@@ -199,3 +199,9 @@ export const CHARACTER_AI_DRAFT_KEYS: CharacterAIDraftKey[] = [
   ...CHARACTER_AI_ID_FIELDS.map((field) => field.key),
   ...CHARACTER_AI_TEXT_FIELDS.map((field) => field.key),
 ];
+
+export function createEmptyAIRoleDraft(): AIRoleDraftFields {
+  return Object.fromEntries(
+    CHARACTER_AI_DRAFT_KEYS.map((key) => [key, ""]),
+  ) as AIRoleDraftFields;
+}

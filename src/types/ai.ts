@@ -19,8 +19,6 @@ export interface AIModelConfigStore {
 
 export type EditorMode = "edit" | "ai";
 
-export type AISectionTab = "edit" | "agent" | "preview";
-
 export type CharacterPresetFormat = "tool-call" | "standard";
 
 export type MainPresetFormat = "markdown" | "koishi";

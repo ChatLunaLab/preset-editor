@@ -3,8 +3,8 @@
 import type {
   AIGenerateLogEntry,
   AIPresetFormat,
-  AISectionTab,
 } from "@/types/ai";
+import type { AIEditTab } from "@/lib/editor-route";
 import type { CharacterPresetTemplate, RawPreset } from "@/types/preset";
 import type {
   AIRoleDraftFields,
@@ -76,7 +76,7 @@ export function CharacterAIContent<T extends AIPresetFormat>({
   onClearLogs,
   onNewChatActionChange,
 }: CharacterAIContentProps<T>) {
-  const tab = activeTab as AISectionTab;
+  const tab = activeTab as AIEditTab;
 
   return (
     <div className={tab === "agent" ? "flex h-full min-h-0 flex-col" : undefined}>

@@ -257,10 +257,6 @@ const incrementStat = async (id: string, type: 'views' | 'downloads') => {
     }
 };
 
-export function clearPresetViewCache() {
-    cacheManager.presetData.clear();
-}
-
 export const incrementViews = (id: string) => incrementStat(id, 'views');
 export const incrementDownloads = (id: string) =>
     incrementStat(id, 'downloads');

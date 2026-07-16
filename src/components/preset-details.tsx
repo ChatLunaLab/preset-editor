@@ -16,7 +16,7 @@ import { ChevronDown } from "lucide-react";
 import { Skeleton } from './ui/skeleton';
 import { PresetPreviewDialog } from "./preset-preview-dialog";
 import { Loader2 } from "lucide-react"
-import { importPreset } from '@/hooks/use-preset';
+import { importPreset } from '@/lib/preset-io';
 import { toast } from 'sonner';
 import { buildCharacterPath } from "@/lib/editor-route";
 

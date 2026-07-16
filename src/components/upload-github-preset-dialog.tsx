@@ -6,13 +6,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import type { PresetModel } from "@/lib/database";
+import { getPresetDisplayName } from "@/lib/preset-store";
 import {
     getPresetDefaultFileName,
-    getPresetDisplayName,
     getPresetUploadToken,
-    PresetModel,
     uploadPreset,
-} from "@/hooks/use-preset";
+} from "@/lib/preset-io";
 import { cn } from "@/lib/utils";
 import { isCharacterPresetTemplate, isRawPreset, RawPreset, CharacterPresetTemplate } from "@/types/preset";
 import { load } from "js-yaml";
