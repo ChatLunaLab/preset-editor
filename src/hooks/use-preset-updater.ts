@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { type PresetModel } from "@/hooks/use-preset";
+import { type PresetModel } from "@/lib/database";
 import { mutatePreset } from "@/lib/preset-mutation-queue";
 import { GetNestedType, NestedKeyOf } from "@/types/util";
 import { updateNestedObject } from "@/lib/utils";

@@ -60,11 +60,44 @@ export function getAgentChatSessionId(
   return `${presetType}:${presetId}`;
 }
 
-function cloneMessages(messages: UIMessage[]): UIMessage[] {
-  return structuredClone(messages);
+function hasMessageParts(message: UIMessage): boolean {
+  const parts = (message as { parts?: unknown }).parts;
+  return Array.isArray(parts) && parts.length > 0;
 }
 
-class AgentInterjectionQueue {
+/** Sole persistence gate: keep only UIMessages with non-empty parts. */
+function snapshotPersistableMessages(messages: UIMessage[]): UIMessage[] {
+  return structuredClone(messages.filter(hasMessageParts));
+}
+
+type InsertedInterjection = AgentChatInterjection & {
+  state: "injected";
+  stepNumber: number;
+};
+
+type DeferredInterjection = AgentChatInterjection & {
+  state: "queued";
+  stepNumber?: undefined;
+};
+
+function isInsertedInterjection(
+  entry: AgentChatInterjection,
+): entry is InsertedInterjection {
+  return entry.state === "injected" && entry.stepNumber !== undefined;
+}
+
+function isDeferredInterjection(
+  entry: AgentChatInterjection,
+): entry is DeferredInterjection {
+  return entry.state === "queued";
+}
+
+/**
+ * Manages human-in-the-loop interjections for a single agent run.
+ * Queued items are either consumed by prepareStep (injected) or returned as
+ * deferred on finishRun when no further step occurs.
+ */
+class HumanLoopController {
   private entries: AgentChatInterjection[] = [];
   private listeners = new Set<(entries: AgentChatInterjection[]) => void>();
 
@@ -81,7 +114,8 @@ class AgentInterjectionQueue {
     this.publish();
   }
 
-  takeForStep(stepNumber: number) {
+  /** Atomically promote all currently queued items to injected for this step. */
+  consumeForStep(stepNumber: number): AgentChatInterjection[] {
     const queued = this.entries.filter((entry) => entry.state === "queued");
     if (queued.length === 0) return [];
     const queuedIds = new Set(queued.map((entry) => entry.id));
@@ -91,18 +125,31 @@ class AgentInterjectionQueue {
         : entry,
     );
     this.publish();
-    return queued;
+    return queued.map((entry) => ({
+      ...entry,
+      state: "injected" as const,
+      stepNumber,
+    }));
   }
 
-  completeInjected() {
-    const injected = this.entries.filter(
-      (entry) => entry.state === "injected" && entry.stepNumber !== undefined,
-    );
-    if (injected.length === 0) return [];
-    const injectedIds = new Set(injected.map((entry) => entry.id));
-    this.entries = this.entries.filter((entry) => !injectedIds.has(entry.id));
-    this.publish();
-    return injected;
+  /**
+   * End the current run: return inserted (model-consumed) and deferred
+   * (still queued, no next prepareStep), then clear controller state.
+   */
+  finishRun(): {
+    inserted: InsertedInterjection[];
+    deferred: DeferredInterjection[];
+  } {
+    const inserted = this.entries.filter(isInsertedInterjection);
+    const deferred = this.entries.filter(isDeferredInterjection);
+    if (this.entries.length > 0) {
+      this.entries = [];
+      this.publish();
+    }
+    return {
+      inserted: inserted.map((entry) => ({ ...entry })),
+      deferred: deferred.map((entry) => ({ ...entry })),
+    };
   }
 
   clear() {
@@ -124,6 +171,122 @@ class AgentInterjectionQueue {
     const snapshot = this.get();
     for (const listener of this.listeners) listener(snapshot);
   }
+}
+
+function interjectionToUserMessage(entry: AgentChatInterjection): UIMessage {
+  return {
+    id: entry.id,
+    role: "user",
+    metadata: { createdAt: entry.createdAt, interjected: true },
+    parts: [{ type: "text", text: entry.text }],
+  };
+}
+
+/**
+ * Pure finalizer for one agent run's UI history.
+ * Replaces/appends completedMessage, then splices inserted user messages at
+ * the real step-start boundaries of the assistant message.
+ */
+function finalizeHumanLoopRun(
+  messages: UIMessage[],
+  completedMessage: UIMessage,
+  inserted: InsertedInterjection[],
+): UIMessage[] {
+  const messageIndex = messages.findIndex(
+    (item) => item.id === completedMessage.id,
+  );
+  const finalizedTurn =
+    inserted.length > 0
+      ? insertInterjectionsIntoAssistant(completedMessage, inserted)
+      : hasMessageParts(completedMessage)
+        ? [completedMessage]
+        : [];
+
+  if (messageIndex < 0) {
+    return [...messages, ...finalizedTurn];
+  }
+
+  return [
+    ...messages.slice(0, messageIndex),
+    ...finalizedTurn,
+    ...messages.slice(messageIndex + 1),
+  ];
+}
+
+function insertInterjectionsIntoAssistant(
+  message: UIMessage,
+  interjections: InsertedInterjection[],
+): UIMessage[] {
+  if (message.role !== "assistant") {
+    return [message, ...interjections.map(interjectionToUserMessage)];
+  }
+
+  const parts = Array.isArray(message.parts) ? message.parts : [];
+  const stepStartIndices = parts.reduce<number[]>((indices, part, index) => {
+    if (part.type === "step-start") indices.push(index);
+    return indices;
+  }, []);
+
+  const groups = new Map<number, InsertedInterjection[]>();
+  for (const entry of interjections) {
+    const group = groups.get(entry.stepNumber) ?? [];
+    group.push(entry);
+    groups.set(entry.stepNumber, group);
+  }
+
+  const output: UIMessage[] = [];
+  const fallback: InsertedInterjection[] = [];
+  let cursor = 0;
+  let segmentIndex = 0;
+  const metadata =
+    message.metadata && typeof message.metadata === "object"
+      ? (message.metadata as Record<string, unknown>)
+      : {};
+  const intermediateMetadata =
+    typeof metadata.createdAt === "number"
+      ? { createdAt: metadata.createdAt }
+      : undefined;
+
+  for (const [stepNumber, entries] of Array.from(groups.entries()).sort(
+    ([left], [right]) => left - right,
+  )) {
+    const boundary = stepStartIndices[stepNumber];
+    if (boundary === undefined || boundary < cursor) {
+      // Local fallback: no matching step-start; place after existing assistant parts.
+      fallback.push(...entries);
+      continue;
+    }
+
+    const segmentParts = parts.slice(cursor, boundary);
+    if (segmentParts.length > 0) {
+      output.push({
+        ...message,
+        id: `${message.id}-before-${segmentIndex}`,
+        parts: segmentParts,
+        metadata: intermediateMetadata,
+      });
+      segmentIndex += 1;
+    }
+    output.push(...entries.map(interjectionToUserMessage));
+    cursor = boundary;
+  }
+
+  const finalParts = parts.slice(cursor);
+  if (finalParts.length > 0) {
+    output.push({ ...message, parts: finalParts });
+  }
+
+  // Unmatched / missing-boundary items go after whatever assistant content exists.
+  if (fallback.length > 0) {
+    output.push(...fallback.map(interjectionToUserMessage));
+  }
+
+  // Empty completed assistant must not enter the result as parts: [].
+  if (output.length === 0) {
+    return interjections.map(interjectionToUserMessage);
+  }
+
+  return output;
 }
 
 function withReasoningTiming<T extends { providerMetadata?: ProviderMetadata }>(
@@ -197,12 +360,12 @@ class PresetAgentChatTransport implements ChatTransport<UIMessage> {
     presetId: string;
     presetType: AgentChatPresetType;
   } & AgentChatRuntime;
-  private readonly interjections: AgentInterjectionQueue;
+  private readonly humanLoop: HumanLoopController;
 
   constructor(options: {
     presetId: string;
     presetType: AgentChatPresetType;
-    interjections: AgentInterjectionQueue;
+    humanLoop: HumanLoopController;
   } & AgentChatRuntime) {
     this.runtime = {
       presetId: options.presetId,
@@ -212,7 +375,7 @@ class PresetAgentChatTransport implements ChatTransport<UIMessage> {
       reasoning: options.reasoning,
       webSearch: options.webSearch,
     };
-    this.interjections = options.interjections;
+    this.humanLoop = options.humanLoop;
   }
 
   updateRuntime(runtime: Partial<AgentChatRuntime>) {
@@ -250,8 +413,8 @@ class PresetAgentChatTransport implements ChatTransport<UIMessage> {
       reasoning,
       webSearch,
       takeInterjections: (stepNumber) =>
-        this.interjections
-          .takeForStep(stepNumber)
+        this.humanLoop
+          .consumeForStep(stepNumber)
           .map(({ text }) => ({ text })),
     });
     const smoothAgent = {
@@ -292,6 +455,7 @@ class PresetAgentChatTransport implements ChatTransport<UIMessage> {
       sendReasoning: true,
       sendSources: true,
     });
+    // Intentionally no pre-send message filtering.
     return (transport as unknown as ChatTransport<UIMessage>).sendMessages(
       options,
     );
@@ -312,7 +476,7 @@ class SessionPersistence {
   constructor(private readonly sessionId: string) {}
 
   scheduleSave(messages: UIMessage[]) {
-    this.pendingMessages = cloneMessages(messages);
+    this.pendingMessages = snapshotPersistableMessages(messages);
     this.pendingRevision = this.revision;
 
     if (this.debounceTimer !== null) {
@@ -334,7 +498,10 @@ class SessionPersistence {
 
   flush(messages: UIMessage[]) {
     this.cancelDebounce();
-    return this.enqueuePersist(cloneMessages(messages), this.revision);
+    return this.enqueuePersist(
+      snapshotPersistableMessages(messages),
+      this.revision,
+    );
   }
 
   clear() {
@@ -382,97 +549,47 @@ class SessionPersistence {
   }
 }
 
-function splitAssistantWithInterjections(
+function buildCompletedAssistantMessage(
   message: UIMessage,
-  interjections: AgentChatInterjection[],
-): UIMessage[] {
-  if (message.role !== "assistant" || interjections.length === 0) {
-    return [message];
-  }
-  const stepStartIndices = message.parts.reduce<number[]>((indices, part, index) => {
-    if (part.type === "step-start") indices.push(index);
-    return indices;
-  }, []);
-  const groups = new Map<number, AgentChatInterjection[]>();
-  for (const entry of interjections) {
-    if (entry.stepNumber === undefined) continue;
-    const group = groups.get(entry.stepNumber) ?? [];
-    group.push(entry);
-    groups.set(entry.stepNumber, group);
-  }
-
-  const output: UIMessage[] = [];
-  const unmatched: AgentChatInterjection[] = [];
-  let cursor = 0;
-  let segmentIndex = 0;
+  messages: UIMessage[],
+  isAbort: boolean,
+): UIMessage {
+  const responseFinishedAt = Date.now();
   const metadata =
     message.metadata && typeof message.metadata === "object"
       ? (message.metadata as Record<string, unknown>)
       : {};
-  const intermediateMetadata =
-    typeof metadata.createdAt === "number"
-      ? { createdAt: metadata.createdAt }
-      : undefined;
-
-  for (const [stepNumber, entries] of Array.from(groups.entries()).sort(
-    ([left], [right]) => left - right,
-  )) {
-    const boundary = stepStartIndices[stepNumber];
-    if (boundary === undefined || boundary < cursor) {
-      unmatched.push(...entries);
-      continue;
+  let lastInput: UIMessage | undefined;
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (messages[index].role === "user") {
+      lastInput = messages[index];
+      break;
     }
-    const parts = message.parts.slice(cursor, boundary);
-    if (parts.length > 0) {
-      output.push({
-        ...message,
-        id: `${message.id}-before-${segmentIndex}`,
-        parts,
-        metadata: intermediateMetadata,
-      });
-      segmentIndex += 1;
-    }
-    output.push(
-      ...entries.map(
-        (entry): UIMessage => ({
-          id: entry.id,
-          role: "user",
-          metadata: { createdAt: entry.createdAt, interjected: true },
-          parts: [{ type: "text", text: entry.text }],
-        }),
-      ),
-    );
-    cursor = boundary;
   }
-
-  const finalParts = message.parts.slice(cursor);
-  if (finalParts.length > 0 || output.length === 0) {
-    output.push({ ...message, parts: finalParts });
-  }
-  output.push(
-    ...unmatched.map(
-      (entry): UIMessage => ({
-        id: entry.id,
-        role: "user",
-        metadata: { createdAt: entry.createdAt, interjected: true },
-        parts: [{ type: "text", text: entry.text }],
-      }),
-    ),
-  );
-  return output;
-}
-
-function mergeInjectedMessages(
-  messages: UIMessage[],
-  assistantMessageId: string,
-  interjections: AgentChatInterjection[],
-) {
-  if (interjections.length === 0) return messages;
-  return messages.flatMap((message) =>
-    message.id === assistantMessageId
-      ? splitAssistantWithInterjections(message, interjections)
-      : [message],
-  );
+  const lastInputMetadata =
+    lastInput?.metadata && typeof lastInput.metadata === "object"
+      ? (lastInput.metadata as Record<string, unknown>)
+      : {};
+  const responseStartedAt =
+    typeof metadata.responseStartedAt === "number"
+      ? metadata.responseStartedAt
+      : typeof lastInputMetadata.createdAt === "number"
+        ? lastInputMetadata.createdAt
+        : responseFinishedAt;
+  return {
+    ...message,
+    metadata: {
+      ...metadata,
+      createdAt:
+        typeof metadata.createdAt === "number"
+          ? metadata.createdAt
+          : responseStartedAt,
+      responseStartedAt,
+      responseFinishedAt,
+      responseDurationMs: Math.max(0, responseFinishedAt - responseStartedAt),
+      ...(isAbort ? { stopped: true } : {}),
+    },
+  };
 }
 
 async function createAgentChatSession(
@@ -482,8 +599,9 @@ async function createAgentChatSession(
   runtime: AgentChatRuntime,
 ): Promise<AgentChatSession> {
   const record = await db.agentChats.get(sessionId);
-  const initialMessages = record?.messages ?? [];
-  const interjections = new AgentInterjectionQueue();
+  const storedMessages = record?.messages ?? [];
+  const initialMessages = snapshotPersistableMessages(storedMessages);
+  const humanLoop = new HumanLoopController();
   const transport = new PresetAgentChatTransport({
     presetId,
     presetType,
@@ -491,68 +609,30 @@ async function createAgentChatSession(
     name: runtime.name,
     reasoning: runtime.reasoning,
     webSearch: runtime.webSearch,
-    interjections,
+    humanLoop,
   });
   const persistence = new SessionPersistence(sessionId);
+  if (record && initialMessages.length !== storedMessages.length) {
+    void persistence.flush(initialMessages).catch(handleAgentChatPersistenceError);
+  }
 
   const chatRef: { current: Chat<UIMessage> | null } = { current: null };
   const chat = new Chat({
     id: sessionId,
     messages: initialMessages,
     transport,
-    onFinish: ({ message, messages, isAbort }) => {
-      const responseFinishedAt = Date.now();
-      const metadata =
-        message.metadata && typeof message.metadata === "object"
-          ? (message.metadata as Record<string, unknown>)
-          : {};
-      let lastInput: UIMessage | undefined;
-      for (let index = messages.length - 1; index >= 0; index -= 1) {
-        if (messages[index].role === "user") {
-          lastInput = messages[index];
-          break;
-        }
-      }
-      const lastInputMetadata =
-        lastInput?.metadata && typeof lastInput.metadata === "object"
-          ? (lastInput.metadata as Record<string, unknown>)
-          : {};
-      const responseStartedAt =
-        typeof metadata.responseStartedAt === "number"
-          ? metadata.responseStartedAt
-          : typeof lastInputMetadata.createdAt === "number"
-            ? lastInputMetadata.createdAt
-            : responseFinishedAt;
-      const completedMessage: UIMessage = {
-        ...message,
-        metadata: {
-          ...metadata,
-          createdAt:
-            typeof metadata.createdAt === "number"
-              ? metadata.createdAt
-              : responseStartedAt,
-          responseStartedAt,
-          responseFinishedAt,
-          responseDurationMs: Math.max(
-            0,
-            responseFinishedAt - responseStartedAt,
-          ),
-          ...(isAbort ? { stopped: true } : {}),
-        },
-      };
-      const messageIndex = messages.findIndex(
-        (item) => item.id === completedMessage.id,
+    // Single settlement path for success / abort / error (AI SDK always calls onFinish).
+    onFinish: ({ message, messages, isAbort, isError }) => {
+      const completedMessage = buildCompletedAssistantMessage(
+        message,
+        messages,
+        isAbort,
       );
-      const completedMessages =
-        messageIndex >= 0
-          ? messages.map((item, index) =>
-              index === messageIndex ? completedMessage : item,
-            )
-          : [...messages, completedMessage];
-      const finalizedMessages = mergeInjectedMessages(
-        completedMessages,
-        completedMessage.id,
-        interjections.completeInjected(),
+      const { inserted, deferred } = humanLoop.finishRun();
+      const finalizedMessages = finalizeHumanLoopRun(
+        messages,
+        completedMessage,
+        inserted,
       );
 
       if (chatRef.current) {
@@ -561,26 +641,36 @@ async function createAgentChatSession(
       void persistence
         .flush(finalizedMessages)
         .catch(handleAgentChatPersistenceError);
-    },
-    onError: () => {
-      const injected = interjections.completeInjected();
-      const current = chatRef.current;
-      if (current) {
-        const latestAssistant = [...current.messages]
-          .reverse()
-          .find((message) => message.role === "assistant");
-        const finalizedMessages = latestAssistant
-          ? mergeInjectedMessages(
-              current.messages,
-              latestAssistant.id,
-              injected,
-            )
-          : current.messages;
-        current.messages = finalizedMessages;
+
+      if (deferred.length === 0) return;
+
+      const deferredUserMessages = deferred.map(interjectionToUserMessage);
+
+      if (isAbort || isError) {
+        // Persist deferred as plain user messages; do not auto-restart.
+        const withDeferred = [...finalizedMessages, ...deferredUserMessages];
+        if (chatRef.current) {
+          chatRef.current.messages = withDeferred;
+        }
         void persistence
-          .flush(finalizedMessages)
+          .flush(withDeferred)
           .catch(handleAgentChatPersistenceError);
+        return;
       }
+
+      // Wait for AI SDK to clear activeResponse before starting the next request.
+      queueMicrotask(() => {
+        const activeChat = chatRef.current;
+        if (!activeChat) return;
+        activeChat.messages = [
+          ...activeChat.messages,
+          ...deferredUserMessages,
+        ];
+        void persistence
+          .flush(activeChat.messages)
+          .catch(handleAgentChatPersistenceError);
+        void activeChat.sendMessage().catch(handleAgentChatPersistenceError);
+      });
     },
   });
   chatRef.current = chat;
@@ -597,7 +687,7 @@ async function createAgentChatSession(
     flushSave: (messages) => persistence.flush(messages),
     clear: async () => {
       if (session.isBusy()) return;
-      interjections.clear();
+      humanLoop.clear();
       await persistence.clear();
       chat.messages = [];
     },
@@ -606,10 +696,10 @@ async function createAgentChatSession(
       return status === "submitted" || status === "streaming";
     },
     enqueueInterjection: (text, createdAt) => {
-      interjections.enqueue(text, createdAt);
+      humanLoop.enqueue(text, createdAt);
     },
-    getInterjections: () => interjections.get(),
-    subscribeInterjections: (listener) => interjections.subscribe(listener),
+    getInterjections: () => humanLoop.get(),
+    subscribeInterjections: (listener) => humanLoop.subscribe(listener),
   };
 
   sessions.set(sessionId, session);

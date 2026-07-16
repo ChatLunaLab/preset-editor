@@ -3,24 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   CHARACTER_AI_DRAFT_KEYS,
+  createEmptyAIRoleDraft,
   type AIRoleDraftFields,
   type CharacterAIDraftKey,
 } from "@/lib/ai/character-details";
 
 const STORAGE_PREFIX = "chatluna_main_ai_draft:";
-
-const EMPTY_DRAFT: AIRoleDraftFields = {
-  bot_id: "",
-  owner_id: "",
-  description: "",
-  personality: "",
-  hobbies: "",
-  dialogue_examples: "",
-  chat_style: "",
-  chat_behavior: "",
-  relationship: "",
-  stickers: "",
-};
 
 interface StoredMainAIDraft {
   draft: AIRoleDraftFields;
@@ -43,12 +31,12 @@ function normalizeDraft(value: unknown): AIRoleDraftFields {
 
 function readStoredDraft(presetId: string): StoredMainAIDraft {
   if (typeof window === "undefined") {
-    return { draft: { ...EMPTY_DRAFT }, generatedDraft: null };
+    return { draft: createEmptyAIRoleDraft(), generatedDraft: null };
   }
 
   try {
     const raw = window.localStorage.getItem(`${STORAGE_PREFIX}${presetId}`);
-    if (!raw) return { draft: { ...EMPTY_DRAFT }, generatedDraft: null };
+    if (!raw) return { draft: createEmptyAIRoleDraft(), generatedDraft: null };
 
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     return {
@@ -58,7 +46,7 @@ function readStoredDraft(presetId: string): StoredMainAIDraft {
         : null,
     };
   } catch {
-    return { draft: { ...EMPTY_DRAFT }, generatedDraft: null };
+    return { draft: createEmptyAIRoleDraft(), generatedDraft: null };
   }
 }
 

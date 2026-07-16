@@ -6,7 +6,8 @@ import { CharacterMessagesForm } from "./character-messages";
 import { CharacterAuthorNote } from "./character-author-note";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { exportPreset, usePreset } from "@/hooks/use-preset";
+import { usePreset } from "@/hooks/use-preset";
+import { exportPreset } from "@/lib/preset-io";
 import { CharacterPresetTemplate, RawPreset } from "@/types/preset";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
@@ -22,16 +23,14 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "./ui/tooltip";
-import { EditorModeSelector } from "./ai/editor-mode-selector";
 import { CharacterAIContent } from "./ai/character-ai-content";
 import {
     CHARACTER_PRESET_FORMATS,
     MAIN_PRESET_FORMATS,
 } from "./ai/character-ai-editor";
-import { useCharacterAIGenerate } from "@/hooks/use-character-ai-generate";
+import { useAIGenerate } from "@/hooks/use-ai-generate";
 import { useCharacterAIDraft } from "@/hooks/use-character-ai-draft";
 import { useMainAIDraft } from "@/hooks/use-main-ai-draft";
-import { useMainAIGenerate } from "@/hooks/use-main-ai-generate";
 import { usePresetUpdater } from "@/hooks/use-preset-updater";
 import type {
     CharacterPresetFormat,
@@ -50,6 +49,11 @@ import {
     EditorSegmentedTabs,
     type EditorSegmentedTab,
 } from "./editor-segmented-tabs";
+
+const MODE_TABS = [
+    { value: "edit", label: "配置" },
+    { value: "ai", label: "助手" },
+] as const;
 
 const MAIN_PRESET_TABS = [
     { value: "basic", label: "基本配置" },
@@ -91,8 +95,8 @@ function CharacterEditorInner({ presetId }: CharacterEditorProps) {
 
     const characterDraft = useCharacterAIDraft(characterPreset, updatePreset);
     const mainDraft = useMainAIDraft(presetId);
-    const characterGeneration = useCharacterAIGenerate();
-    const mainGeneration = useMainAIGenerate();
+    const characterGeneration = useAIGenerate("character");
+    const mainGeneration = useAIGenerate("main");
 
     const [uploadOpen, setUploadOpen] = useState(false);
     const [canStartNewChat, setCanStartNewChat] = useState(false);
@@ -260,10 +264,14 @@ function CharacterEditorInner({ presetId }: CharacterEditorProps) {
                     />
 
                     <div className="flex shrink-0 items-center justify-end gap-1">
-                        <EditorModeSelector
-                            mode={editorMode}
-                            onModeChange={handleModeChange}
-                            className="mr-1"
+                        <EditorSegmentedTabs
+                            value={editorMode}
+                            items={MODE_TABS}
+                            onValueChange={(value) =>
+                                handleModeChange(value as EditorMode)
+                            }
+                            ariaLabel="预设编辑方式"
+                            className={cn("w-fit", "mr-1")}
                         />
                         {isAgentTab && (
                             <TooltipProvider>

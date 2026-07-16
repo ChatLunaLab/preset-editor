@@ -16,7 +16,7 @@ import {
   ExternalLinkIcon,
   FileTextIcon,
 } from "lucide-react";
-import { PresetToolFeed } from "./preset-tool-feed";
+import { PresetToolFeed } from "./preset-tool-ui";
 import {
   isToolPending,
   type PresetToolPart,

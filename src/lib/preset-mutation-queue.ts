@@ -1,8 +1,5 @@
-import {
-  getPreset,
-  withPresetTransaction,
-  type PresetModel,
-} from "@/hooks/use-preset";
+import { type PresetModel } from "@/lib/database";
+import { getPreset, withPresetTransaction } from "@/lib/preset-store";
 
 const queues = new Map<string, Promise<unknown>>();
 

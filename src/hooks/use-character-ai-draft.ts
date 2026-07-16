@@ -3,30 +3,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   CHARACTER_AI_DRAFT_KEYS,
+  createEmptyAIRoleDraft,
   type AIRoleDraftFields,
   type CharacterAIDraftKey,
 } from "@/lib/ai/character-details";
 import type { CharacterPresetTemplate } from "@/types/preset";
 import type { PresetFieldUpdater } from "@/hooks/use-preset-updater";
 
-const EMPTY_DRAFT: AIRoleDraftFields = {
-  bot_id: "",
-  owner_id: "",
-  description: "",
-  personality: "",
-  hobbies: "",
-  dialogue_examples: "",
-  chat_style: "",
-  chat_behavior: "",
-  relationship: "",
-  stickers: "",
-};
-
 function readDraft(
   preset: CharacterPresetTemplate | null | undefined,
 ): AIRoleDraftFields {
   if (!preset) {
-    return { ...EMPTY_DRAFT };
+    return createEmptyAIRoleDraft();
   }
 
   return {
@@ -172,7 +160,6 @@ export function useCharacterAIDraft(
     draft,
     isDirty,
     setField,
-    keys: CHARACTER_AI_DRAFT_KEYS,
     getMergedCharacterPreset,
     markGenerated,
   };

@@ -1,7 +1,8 @@
 "use client";
 
 import { CharacterList } from "@/components/character-list";
-import { importPreset, usePresets } from "@/hooks/use-preset";
+import { usePresets } from "@/hooks/use-preset";
+import { importPreset } from "@/lib/preset-io";
 import { NewPresetDialog } from "@/components/new-preset-dialog";
 import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";

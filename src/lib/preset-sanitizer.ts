@@ -7,6 +7,10 @@ const SENSITIVE_KEYS = new Set([
   "model",
 ]);
 
+export function isSensitivePresetKey(key: string): boolean {
+  return SENSITIVE_KEYS.has(key);
+}
+
 /**
  * Recursively clone a value while removing known credential / connection keys.
  * Preserves RegExp instances (not converted to plain objects). Does not mutate input.
@@ -37,7 +41,7 @@ function stripSensitiveDeep(value: unknown): unknown {
   const source = value as Record<string, unknown>;
   const clone: Record<string, unknown> = {};
   for (const [key, child] of Object.entries(source)) {
-    if (SENSITIVE_KEYS.has(key)) {
+    if (isSensitivePresetKey(key)) {
       continue;
     }
     clone[key] = stripSensitiveDeep(child);

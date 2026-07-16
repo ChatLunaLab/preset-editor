@@ -98,7 +98,7 @@ export function PresetPreviewDialog({ preset, open, onOpenChange }: PresetPrevie
 
     initialize();
 
-  }, [open, editorContainerRef, presetYaml, theme.resolvedTheme]);
+  }, [open, editorContainerRef, isMobile, presetYaml, theme.resolvedTheme]);
 
   // 更新编辑器内容
   useEffect(() => {

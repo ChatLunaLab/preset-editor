@@ -37,6 +37,8 @@ jobs:
             - run: yarn install --immutable
               name: Install dependencies
 
+            - name: Lint
+              run: yarn lint
             - name: Build
               run: yarn build
             - name: Setup Pages

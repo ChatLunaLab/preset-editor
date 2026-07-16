@@ -27,12 +27,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useMemo, useState } from "react";
-import {
-  deletePreset,
-  exportPreset,
-  getPreset,
-  PresetModel,
-} from "@/hooks/use-preset";
+import type { PresetModel } from "@/lib/database";
+import { deletePreset, getPreset } from "@/lib/preset-store";
+import { exportPreset } from "@/lib/preset-io";
 import { Link, useNavigate } from "react-router";
 import { UploadPresetDialog } from "@/components/upload-preset-dialog";
 import {
