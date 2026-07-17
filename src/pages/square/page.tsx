@@ -20,7 +20,7 @@ import {
     PaginationPrevious,
 } from '@/components/ui/pagination';
 import { useMemo, useState, useLayoutEffect } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { useSquarePresets } from '@/hooks/use-square-presets';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SquareStatsPeriod } from '@/types/square';
@@ -48,10 +48,13 @@ export default function SquarePage() {
     const [search, setSearch] = useState('');
     const [sortOption, setSortOption] = useState('views');
     const [period, setPeriod] = useState<SquareStatsPeriod>('all');
-    const [currentPage, setCurrentPage] = useState(1);
+    const [searchParams, setSearchParams] = useSearchParams();
     const [refresh, setRefresh] = useState(false);
 
     const itemsPerPage = 12;
+    const routePage = Number(searchParams.get('page'));
+    const requestedPage =
+        Number.isInteger(routePage) && routePage > 0 ? routePage : 1;
 
     const keywords = useMemo(() => search.split(' ').filter(Boolean), [search]);
     const { presets: sourcePresets, isLoading } = useSquarePresets(
@@ -61,6 +64,20 @@ export default function SquarePage() {
         period
     );
     const totalPages = Math.ceil(sourcePresets.length / itemsPerPage);
+    const currentPage = Math.min(requestedPage, Math.max(totalPages, 1));
+
+    const setCurrentPage = (page: number) => {
+        const nextPage = Math.max(1, page);
+        const nextSearchParams = new URLSearchParams(searchParams);
+
+        if (nextPage === 1) {
+            nextSearchParams.delete('page');
+        } else {
+            nextSearchParams.set('page', String(nextPage));
+        }
+
+        setSearchParams(nextSearchParams);
+    };
 
     const currentData = useMemo(
         () =>
@@ -264,9 +281,7 @@ export default function SquarePage() {
                             <PaginationItem>
                                 <PaginationPrevious
                                     onClick={() =>
-                                        setCurrentPage((p) =>
-                                            Math.max(1, p - 1)
-                                        )
+                                        setCurrentPage(currentPage - 1)
                                     }
                                     className={
                                         currentPage === 1
@@ -289,8 +304,8 @@ export default function SquarePage() {
                             <PaginationItem>
                                 <PaginationNext
                                     onClick={() =>
-                                        setCurrentPage((p) =>
-                                            Math.min(totalPages, p + 1)
+                                        setCurrentPage(
+                                            Math.min(totalPages, currentPage + 1)
                                         )
                                     }
                                     className={
