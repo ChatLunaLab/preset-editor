@@ -35,6 +35,10 @@ export function EditorSegmentedTabs({
   className,
 }: EditorSegmentedTabsProps) {
   const layoutId = `editor-segmented-tabs-${useId()}`;
+  // Short tab sets (e.g. 配置/助手) should not create scroll containers.
+  // overflow-x:auto can force overflow-y:auto and produce a 1px vertical
+  // scrollbar on 1080p integer zoom levels.
+  const enableScroll = items.length > 3;
 
   return (
     <Tabs
@@ -42,12 +46,23 @@ export function EditorSegmentedTabs({
       onValueChange={onValueChange}
       className={cn("min-w-0", className)}
     >
-      <div className="w-full overflow-x-auto">
-        <TabsList aria-label={ariaLabel} className="h-10 w-max max-w-none">
+      <div
+        className={cn(
+          "w-full",
+          enableScroll ? "overflow-x-auto overflow-y-hidden" : "overflow-hidden",
+        )}
+      >
+        <TabsList
+          aria-label={ariaLabel}
+          className={cn(
+            "h-10 items-center",
+            enableScroll ? "w-max max-w-none" : "w-fit max-w-full",
+          )}
+        >
           {items.map((item) => (
             <motion.div
               key={item.value}
-              className="h-full"
+              className="flex h-full items-center"
               variants={triggerVariants}
               initial="hidden"
               animate="visible"

@@ -309,11 +309,11 @@ export function AIModelSettings() {
                       <PopoverPrimitive.Content
                         align="end"
                         sideOffset={4}
-                        className="z-50 w-[min(28rem,calc(100vw-2rem))] rounded-md border bg-popover p-0 text-popover-foreground shadow-md outline-none"
+                        className="z-50 flex max-h-[min(24rem,70vh)] w-[min(28rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-md border bg-popover p-0 text-popover-foreground shadow-md outline-none"
                       >
-                        <Command>
+                        <Command className="max-h-full">
                           <CommandInput placeholder="搜索模型 ID" />
-                          <CommandList>
+                          <CommandList className="max-h-[min(18rem,50vh)] overflow-y-auto overscroll-contain">
                             <CommandEmpty>没有匹配的模型</CommandEmpty>
                             <CommandGroup>
                               {models.map((model) => (
